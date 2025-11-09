@@ -74,7 +74,6 @@ struct LentorMedicalNotesFormView: View {
                     }
                 
                 TextField("NOK Contact No", text: $appState.lentorMedicalNotesDraft.nokContact)
-                    .keyboardType(.phonePad)
                     .onChange(of: appState.lentorMedicalNotesDraft.nokContact) { _ in
                         appState.saveLentorMedicalNotesDraft()
                     }
@@ -188,7 +187,7 @@ struct LentorMedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.lentorMedicalNotesDraft.gcIssue3)
                         .frame(height: 80)
-                        .onChange(of: appState.lentorMedicalNotesDraft.gcIssue3) { _ in
+                        .onChange(of: $appState.lentorMedicalNotesDraft.gcIssue3.wrappedValue) { _ in
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -413,25 +412,91 @@ struct LentorMedicalNotesFormView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingPreview) {
             if let data = pdfData {
-                let filename = "\(appState.lentorMedicalNotesDraft.patientName.isEmpty ? "Patient" : appState.lentorMedicalNotesDraft.patientName) Lentor Notes.pdf"
-                PDFPreviewView(pdfData: data, filename: filename, showingExport: .constant(false))
+                let exportName = filenameForExport()
+                PDFPreviewView(pdfData: data, filename: exportName, showingExport: .constant(false))
             }
         }
         .sheet(isPresented: $showingPasteParser) {
             LentorPasteParseView()
+                .environmentObject(appState)
         }
         .alert("Error", isPresented: $showingAlert) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(alertMessage)
         }
+        .onAppear {
+            if appState.lentorMedicalNotesDraft.dateOfVisit.isEmpty {
+                let f = DateFormatter()
+                f.dateFormat = "dd/MM/yyyy"
+                appState.lentorMedicalNotesDraft.dateOfVisit = f.string(from: Date())
+            }
+            if appState.lentorMedicalNotesDraft.doctorName.isEmpty {
+                appState.lentorMedicalNotesDraft.doctorName = appState.clinician.displayName
+                appState.lentorMedicalNotesDraft.doctorMCR = appState.clinician.mcrNumber
+            }
+            appState.saveLentorMedicalNotesDraft()
+        }
+    }
+    
+    private func filenameForExport() -> String {
+        let patient = appState.lentorMedicalNotesDraft.patientName.isEmpty ? "Patient" : appState.lentorMedicalNotesDraft.patientName
+        if let descriptor = FormRegistry.shared.descriptor(institution: .lentor, kind: .medicalNotes) {
+            return descriptor.exportFilenameFormat.replacingOccurrences(of: "{PATIENT_NAME}", with: patient)
+        } else {
+            return "\(patient) Lentor Notes.pdf"
+        }
     }
     
     private func generatePDF() {
-        // TODO: Implement PDF generation using TemplateManager
-        // For now, show alert
-        alertMessage = "PDF generation for Lentor forms will be implemented with template positioning. Please use the Template Editor to set up field positions first."
-        showingAlert = true
+        guard !appState.lentorMedicalNotesDraft.patientName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            alertMessage = "Please enter a patient name before exporting."
+            showingAlert = true
+            return
+        }
+        
+        let patient = Patient(name: appState.lentorMedicalNotesDraft.patientName, nric: appState.lentorMedicalNotesDraft.nric, dateOfBirth: nil)
+        appState.saveLastPatient(patient)
+        
+        let templates = appState.templates
+            .filter { $0.backgroundImageName.contains("Lentor_MedicalNotes") }
+            .sorted { $0.pageIndex < $1.pageIndex }
+        
+        guard !templates.isEmpty else {
+            alertMessage = "Lentor Medical Notes templates not found. Please check Settings or restore defaults."
+            showingAlert = true
+            return
+        }
+        
+        let pages: [RenderedPage] = templates.compactMap { template in
+            guard let image = PlatformImage.load(named: template.backgroundImageName) else { return nil }
+            let instructions = template.fields.map { field -> DrawInstruction in
+                let text = appState.lentorMedicalNotesDraft.value(for: field.key)
+                return DrawInstruction(
+                    text: text,
+                    frame: field.frame.cgRect,
+                    fontSize: field.fontSize,
+                    alignment: field.alignment,
+                    isMultiline: field.kind == .multiline
+                )
+            }
+            return RenderedPage(backgroundImage: image, instructions: instructions)
+        }
+        
+        guard !pages.isEmpty else {
+            alertMessage = "Could not load Lentor Medical Notes images. Please add assets Lentor_MedicalNotes_p1/p2/p3."
+            showingAlert = true
+            return
+        }
+        
+        let renderer = PDFRenderer()
+        do {
+            pdfData = try renderer.render(pages: pages)
+            showingPreview = true
+        } catch {
+            alertMessage = "Failed to generate PDF: \(error.localizedDescription)"
+            showingAlert = true
+        }
     }
 }
 
@@ -441,3 +506,4 @@ struct LentorMedicalNotesFormView: View {
             .environmentObject(AppState())
     }
 }
+

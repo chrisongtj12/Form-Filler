@@ -41,7 +41,6 @@ struct LentorHVRecordFormView: View {
                     }
                 
                 TextField("Contact No", text: $appState.lentorHVRecordDraft.serviceContact)
-                    .keyboardType(.phonePad)
                     .onChange(of: appState.lentorHVRecordDraft.serviceContact) { _ in
                         appState.saveLentorHVRecordDraft()
                     }
@@ -65,7 +64,6 @@ struct LentorHVRecordFormView: View {
                     }
                 
                 TextField("Caregiver Contact", text: $appState.lentorHVRecordDraft.caregiverContact)
-                    .keyboardType(.phonePad)
                     .onChange(of: appState.lentorHVRecordDraft.caregiverContact) { _ in
                         appState.saveLentorHVRecordDraft()
                     }
@@ -183,7 +181,7 @@ struct LentorHVRecordFormView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingPreview) {
             if let data = pdfData {
-                let filename = "\(appState.lentorHVRecordDraft.clientName.isEmpty ? "Client" : appState.lentorHVRecordDraft.clientName) Lentor HV.pdf"
+                let filename = filenameForExport()
                 PDFPreviewView(pdfData: data, filename: filename, showingExport: .constant(false))
             }
         }
@@ -206,10 +204,82 @@ struct LentorHVRecordFormView: View {
         appState.saveLentorHVRecordDraft()
     }
     
+    private func filenameForExport() -> String {
+        let patient = appState.lentorHVRecordDraft.clientName.isEmpty ? "Client" : appState.lentorHVRecordDraft.clientName
+        if let descriptor = FormRegistry.shared.descriptor(institution: .lentor, kind: .homeVisitRecord) {
+            return descriptor.exportFilenameFormat.replacingOccurrences(of: "{PATIENT_NAME}", with: patient)
+        } else {
+            return "\(patient) Lentor HV.pdf"
+        }
+    }
+    
     private func generatePDF() {
-        // TODO: Implement PDF generation using TemplateManager
-        alertMessage = "PDF generation for Lentor forms will be implemented with template positioning. Please use the Template Editor to set up field positions first."
-        showingAlert = true
+        guard !appState.lentorHVRecordDraft.clientName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            alertMessage = "Please enter a client name before exporting."
+            showingAlert = true
+            return
+        }
+        
+        guard let template = appState.templates.first(where: { $0.backgroundImageName.contains("Lentor_HomeVisitRecord") }) else {
+            alertMessage = "Lentor Attendance Record template not found. Please check Settings or restore defaults."
+            showingAlert = true
+            return
+        }
+        guard let image = PlatformImage.load(named: template.backgroundImageName) else {
+            alertMessage = "Could not load form image. Please add asset Lentor_HomeVisitRecord."
+            showingAlert = true
+            return
+        }
+        
+        var instructions: [DrawInstruction] = []
+        
+        // Header fields
+        for field in template.fields where field.key.hasPrefix("lentorHV.") {
+            let text = appState.lentorHVRecordDraft.value(for: field.key)
+            instructions.append(DrawInstruction(
+                text: text,
+                frame: field.frame.cgRect,
+                fontSize: field.fontSize,
+                alignment: field.alignment,
+                isMultiline: field.kind == .multiline
+            ))
+        }
+        
+        // Rows: draw up to 10 rows (pad with empties)
+        let rowPrototype = template.fields.filter { $0.key.hasPrefix("lentorRow.") }
+        let rowHeight: CGFloat = 40
+        var rows = appState.lentorHVRecordDraft.rows
+        if rows.count < 10 {
+            rows.append(contentsOf: Array(repeating: LentorAttendanceRow(), count: 10 - rows.count))
+        } else if rows.count > 10 {
+            rows = Array(rows.prefix(10))
+        }
+        
+        for (index, row) in rows.enumerated() {
+            let yOffset = CGFloat(index) * rowHeight
+            for field in rowPrototype {
+                var frame = field.frame.cgRect
+                frame.origin.y += yOffset
+                let text = row.value(for: field.key)
+                instructions.append(DrawInstruction(
+                    text: text,
+                    frame: frame,
+                    fontSize: field.fontSize,
+                    alignment: field.alignment,
+                    isMultiline: false
+                ))
+            }
+        }
+        
+        let page = RenderedPage(backgroundImage: image, instructions: instructions)
+        let renderer = PDFRenderer()
+        do {
+            pdfData = try renderer.render(pages: [page])
+            showingPreview = true
+        } catch {
+            alertMessage = "Failed to generate PDF: \(error.localizedDescription)"
+            showingAlert = true
+        }
     }
 }
 
@@ -219,3 +289,4 @@ struct LentorHVRecordFormView: View {
             .environmentObject(AppState())
     }
 }
+

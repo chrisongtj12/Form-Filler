@@ -27,5 +27,13 @@ enum PlatformImage {
         #endif
         return nil
     }
+    
+    /// Load an asset by name and return the native platform image for rendering.
+    static func load(named name: String) -> Native? {
+        #if os(iOS)
+        return UIImage(named: name)
+        #elseif os(macOS)
+        return NSImage(named: NSImage.Name(name))
+        #endif
+    }
 }
-

@@ -93,9 +93,9 @@ struct TexturedButtonStyle: ButtonStyle {
     
     private let palette: Palette
     
-    // Convenience init to accept Institution directly (matches usage intent).
-    init(palette: Institution) {
-        self.palette = Palette(institution: palette)
+    // Distinct label to avoid ambiguity when passing Institution.
+    init(institution: Institution) {
+        self.palette = Palette(institution: institution)
     }
     
     // Also allow explicit palette if ever needed.
@@ -149,7 +149,7 @@ struct TexturedButtonStyle: ButtonStyle {
                 .padding(.horizontal, 16)
                 .frame(maxWidth: .infinity, minHeight: 68)
             }
-            .buttonStyle(TexturedButtonStyle(palette: .activeGlobal))
+            .buttonStyle(TexturedButtonStyle(institution: .activeGlobal))
             .padding(.horizontal, 20)
             
             Button {
@@ -163,7 +163,7 @@ struct TexturedButtonStyle: ButtonStyle {
                 .padding(.horizontal, 16)
                 .frame(maxWidth: .infinity, minHeight: 68)
             }
-            .buttonStyle(TexturedButtonStyle(palette: .lentor))
+            .buttonStyle(TexturedButtonStyle(institution: .lentor))
             .padding(.horizontal, 20)
         }
     }

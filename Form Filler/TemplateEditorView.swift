@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+#if os(iOS)
+import UIKit // for NSTextAlignment in Picker tags
+#elseif os(macOS)
+import AppKit
+#endif
+
 struct TemplateEditorView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedTemplateIndex = 0
@@ -35,8 +41,8 @@ struct TemplateEditorView: View {
                 // Canvas with background and draggable fields
                 ScrollView([.horizontal, .vertical]) {
                     ZStack {
-                        if let image = UIImage(named: template.backgroundImageName) {
-                            Image(uiImage: image)
+                        if let image = PlatformImage.swiftUIImage(named: template.backgroundImageName) {
+                            image
                                 .resizable()
                                 .scaledToFit()
                         } else {
@@ -67,7 +73,15 @@ struct TemplateEditorView: View {
                     }
                     .scaleEffect(scale)
                 }
-                .background(Color.gray.opacity(0.1))
+                .background(
+                    Group {
+                        #if os(iOS)
+                        Color(UIColor.systemBackground)
+                        #elseif os(macOS)
+                        Color(nsColor: .windowBackgroundColor)
+                        #endif
+                    }
+                )
                 
                 // Controls
                 VStack(spacing: 12) {
@@ -102,7 +116,15 @@ struct TemplateEditorView: View {
                     }
                 }
                 .padding()
-                .background(Color(UIColor.systemBackground))
+                .background(
+                    Group {
+                        #if os(iOS)
+                        Color(UIColor.systemBackground)
+                        #elseif os(macOS)
+                        Color(nsColor: .windowBackgroundColor)
+                        #endif
+                    }
+                )
             }
         }
         .navigationTitle("Template Editor")
@@ -171,8 +193,8 @@ struct FieldOverlay: View {
                     }
                 }
             )
-            .position(x: field.frame.x + field.frame.width / 2, 
-                     y: field.frame.y + field.frame.height / 2)
+            .position(x: field.frame.x + field.frame.width / 2,
+                      y: field.frame.y + field.frame.height / 2)
             .gesture(
                 DragGesture()
                     .onChanged { value in
@@ -229,37 +251,61 @@ struct FieldEditorSheet: View {
                     HStack {
                         Text("X")
                         Spacer()
-                        TextField("X", value: $field.frame.x, format: .number)
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 100)
+                        TextField(
+                            "X",
+                            value: Binding(
+                                get: { Double(field.frame.x) },
+                                set: { field.frame.x = CGFloat($0) }
+                            ),
+                            format: .number.precision(.fractionLength(0...2))
+                        )
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 100)
                     }
                     
                     HStack {
                         Text("Y")
                         Spacer()
-                        TextField("Y", value: $field.frame.y, format: .number)
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 100)
+                        TextField(
+                            "Y",
+                            value: Binding(
+                                get: { Double(field.frame.y) },
+                                set: { field.frame.y = CGFloat($0) }
+                            ),
+                            format: .number.precision(.fractionLength(0...2))
+                        )
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 100)
                     }
                     
                     HStack {
                         Text("Width")
                         Spacer()
-                        TextField("Width", value: $field.frame.width, format: .number)
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 100)
+                        TextField(
+                            "Width",
+                            value: Binding(
+                                get: { Double(field.frame.width) },
+                                set: { field.frame.width = CGFloat($0) }
+                            ),
+                            format: .number.precision(.fractionLength(0...2))
+                        )
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 100)
                     }
                     
                     HStack {
                         Text("Height")
                         Spacer()
-                        TextField("Height", value: $field.frame.height, format: .number)
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 100)
+                        TextField(
+                            "Height",
+                            value: Binding(
+                                get: { Double(field.frame.height) },
+                                set: { field.frame.height = CGFloat($0) }
+                            ),
+                            format: .number.precision(.fractionLength(0...2))
+                        )
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 100)
                     }
                 }
                 
@@ -267,10 +313,16 @@ struct FieldEditorSheet: View {
                     HStack {
                         Text("Font Size")
                         Spacer()
-                        TextField("Size", value: $field.fontSize, format: .number)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 100)
+                        TextField(
+                            "Size",
+                            value: Binding(
+                                get: { Double(field.fontSize) },
+                                set: { field.fontSize = CGFloat($0) }
+                            ),
+                            format: .number.precision(.fractionLength(0...2))
+                        )
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 100)
                     }
                     
                     Picker("Alignment", selection: $field.alignment) {
@@ -302,3 +354,27 @@ struct FieldEditorSheet: View {
         }
     }
 }
+
+#Preview("Template Editor") {
+    NavigationView {
+        TemplateEditorView()
+            .environmentObject(AppState())
+    }
+}
+
+#Preview("Field Editor Sheet") {
+    FieldEditorSheet(
+        field: .constant(TemplateField(
+            key: "patient.name",
+            label: "Patient Name",
+            kind: .text,
+            frame: CGRectCodable(x: 100, y: 100, width: 200, height: 30),
+            fontSize: 12,
+            alignment: .left,
+            placeholder: "Enter name"
+        )),
+        isPresented: .constant(true),
+        onDelete: {}
+    )
+}
+

@@ -6,7 +6,13 @@
 //
 
 import Foundation
-import UIKit
+import CoreGraphics
+
+#if os(iOS)
+import UIKit // for NSTextAlignment
+#elseif os(macOS)
+import AppKit // for NSTextAlignment
+#endif
 
 // MARK: - Field Kind
 
@@ -60,8 +66,15 @@ struct TemplateField: Codable, Identifiable {
         case id, key, label, kind, frame, fontSize, alignment, placeholder
     }
     
-    init(key: String, label: String, kind: FieldKind, frame: CGRectCodable, 
-         fontSize: CGFloat, alignment: NSTextAlignment, placeholder: String?) {
+    init(
+        key: String,
+        label: String,
+        kind: FieldKind,
+        frame: CGRectCodable,
+        fontSize: CGFloat,
+        alignment: NSTextAlignment,
+        placeholder: String?
+    ) {
         self.key = key
         self.label = label
         self.kind = kind
@@ -109,3 +122,4 @@ struct Template: Codable, Identifiable {
     var pageIndex: Int
     var fields: [TemplateField]
 }
+

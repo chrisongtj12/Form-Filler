@@ -5,22 +5,17 @@
 //  Drop-in file for iOS 16+
 //
 //  Assumptions:
-//  - You have models Template, TemplateField, FieldKind, CGRectCodable, and a store (TemplateStore)
-//  - If you use a different store (e.g., AppState), adapt the bindings where marked.
+//  - You have models Template, TemplateField, FieldKind, CGRectCodable, and a store (TemplatePersisting)
 //
 
 import SwiftUI
-import UIKit
+import Combine
 
 // MARK: - Store Adapter
-// If you use AppState instead of TemplateStore, adapt this to proxy to your real store.
 protocol TemplatePersisting: ObservableObject {
     var templates: [Template] { get set }
     func save()
 }
-
-// If you already have TemplateStore, this extension is not required; it's here for compile safety.
-extension TemplateStore: TemplatePersisting {}
 
 // MARK: - Export/Import JSON Schema
 
@@ -58,7 +53,7 @@ enum AlignmentDTO: String, Codable {
 
 // MARK: - Pure Functions
 
-public func makeExportJSON(from templates: [Template]) -> String {
+func makeExportJSON(from templates: [Template]) -> String {
     let payload = ExportPackage(
         version: 1,
         templates: templates.map { t in
@@ -91,7 +86,7 @@ public struct ImportResult {
     public var warnings: [String]
 }
 
-public func applyImportJSON(_ json: String, to templates: inout [Template]) -> ImportResult {
+func applyImportJSON(_ json: String, to templates: inout [Template]) -> ImportResult {
     var result = ImportResult(updatedCount: 0, skippedCount: 0, warnings: [])
     guard let data = json.data(using: .utf8) else {
         result.warnings.append("Invalid UTF-8 data.")
@@ -106,46 +101,38 @@ public func applyImportJSON(_ json: String, to templates: inout [Template]) -> I
         result.warnings.append("JSON decoding failed: \(error.localizedDescription)")
         return result
     }
-    // Version check (forward compatible)
     if package.version != 1 {
         result.warnings.append("Unsupported version \(package.version). Attempting best-effort import.")
     }
-    // Map templates by name for quick lookup
     var templateIndexByName: [String: Int] = [:]
     for (idx, t) in templates.enumerated() {
         templateIndexByName[t.name] = idx
     }
-    // Iterate export templates
     for expTemplate in package.templates {
         guard let tIndex = templateIndexByName[expTemplate.name] else {
             result.skippedCount += 1
             result.warnings.append("Template not found: \(expTemplate.name)")
             continue
         }
-        // Map fields by key
         var fieldIndexByKey: [String: Int] = [:]
         for (fIdx, f) in templates[tIndex].fields.enumerated() {
             fieldIndexByKey[f.key] = fIdx
         }
-        // Apply fields
         for expField in expTemplate.fields {
             guard let fIndex = fieldIndexByKey[expField.key] else {
                 result.skippedCount += 1
                 result.warnings.append("Field not found in template '\(expTemplate.name)': \(expField.key)")
                 continue
             }
-            // Update frame
             templates[tIndex].fields[fIndex].frame = CGRectCodable(
                 x: expField.frame.x,
                 y: expField.frame.y,
                 width: expField.frame.w,
                 height: expField.frame.h
             )
-            // Optional: font size
             if let fs = expField.fontSize {
                 templates[tIndex].fields[fIndex].fontSize = fs
             }
-            // Optional: alignment
             if let al = expField.alignment {
                 templates[tIndex].fields[fIndex].alignment = al.toNSTextAlignment()
             }
@@ -179,7 +166,10 @@ extension AlignmentDTO {
 
 struct Clipboard {
     static func copy(_ string: String) {
-        UIPasteboard.general.string = string
+        ClipboardHelper.copy(string)
+    }
+    static func pasteString() -> String? {
+        ClipboardHelper.readString()
     }
 }
 
@@ -211,7 +201,7 @@ struct ImportCoordinatesSheet<Store: TemplatePersisting>: View {
                 // Header actions
                 HStack {
                     Button("Paste") {
-                        if let s = UIPasteboard.general.string {
+                        if let s = Clipboard.pasteString() {
                             text = prettyJSON(s)
                         }
                     }
@@ -224,7 +214,15 @@ struct ImportCoordinatesSheet<Store: TemplatePersisting>: View {
                 TextEditor(text: $text)
                     .font(.system(.body, design: .monospaced))
                     .padding()
-                    .background(Color(UIColor.secondarySystemBackground))
+                    .background(
+                        Group {
+                            #if os(iOS)
+                            Color(UIColor.secondarySystemBackground)
+                            #elseif os(macOS)
+                            Color(nsColor: .underPageBackgroundColor)
+                            #endif
+                        }
+                    )
                 
                 // Messages
                 if let errorMessage {
@@ -270,20 +268,16 @@ struct ImportCoordinatesSheet<Store: TemplatePersisting>: View {
             return
         }
         
-        // Persist changes
         store.templates = working
         store.save()
         
-        // Summary
         let summary = "Updated \(result.updatedCount) fields • \(result.skippedCount) skipped"
         if result.warnings.isEmpty {
             resultMessage = summary
-            // Dismiss after a short delay
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                 dismiss()
             }
         } else {
-            // Show warnings inline and keep sheet open
             let detail = result.warnings.joined(separator: "\n• ")
             resultMessage = summary + "\nWarnings:\n• " + detail
         }
@@ -320,8 +314,6 @@ struct TemplateCoordinateTransferView<Store: TemplatePersisting>: View {
         }
     }
 }
-
-// MARK: - Convenience Preview
 
 #if DEBUG
 struct SettingsCoordinateTransfer_Previews: PreviewProvider {
@@ -369,3 +361,4 @@ struct SettingsCoordinateTransfer_Previews: PreviewProvider {
     }
 }
 #endif
+

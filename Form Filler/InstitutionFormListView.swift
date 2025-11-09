@@ -12,6 +12,7 @@ struct InstitutionFormListView: View {
     let institution: Institution
     
     @State private var showingPasteParser = false
+    @State private var showingLentorPasteParser = false
     
     var body: some View {
         List {
@@ -26,6 +27,27 @@ struct InstitutionFormListView: View {
                                 .foregroundColor(.green)
                             VStack(alignment: .leading) {
                                 Text("Paste AVIXO Template")
+                                    .fontWeight(.semibold)
+                                Text("Auto-fill from copied text")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+            } else if institution == .lentor {
+                Section {
+                    Button(action: {
+                        showingLentorPasteParser = true
+                    }) {
+                        HStack {
+                            Image(systemName: "doc.on.clipboard.fill")
+                                .foregroundColor(.green)
+                            VStack(alignment: .leading) {
+                                Text("Paste Lentor Template")
                                     .fontWeight(.semibold)
                                 Text("Auto-fill from copied text")
                                     .font(.caption)
@@ -65,6 +87,10 @@ struct InstitutionFormListView: View {
         .sheet(isPresented: $showingPasteParser) {
             PasteParseView()
         }
+        .sheet(isPresented: $showingLentorPasteParser) {
+            LentorPasteParseView()
+                .environmentObject(appState)
+        }
     }
     
     @ViewBuilder
@@ -88,3 +114,4 @@ struct InstitutionFormListView: View {
             .environmentObject(AppState())
     }
 }
+

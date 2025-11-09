@@ -16,9 +16,40 @@ struct MedicalNotesFormView: View {
     @State private var pdfData: Data?
     @State private var showingAlert = false
     @State private var alertMessage = ""
+    @State private var showingPasteParser = false
+    
+    // New state to choose which output
+    @State private var showDestinationPicker = false
+    enum ExportDestination {
+        case medicalNotes
+        case homeVisitRecord
+    }
+    @State private var pendingDestination: ExportDestination = .medicalNotes
     
     var body: some View {
         Form {
+            // Quick Actions Section
+            Section {
+                Button(action: {
+                    showingPasteParser = true
+                }) {
+                    HStack {
+                        Image(systemName: "doc.on.clipboard.fill")
+                            .foregroundColor(.green)
+                        VStack(alignment: .leading) {
+                            Text("Paste AVIXO Template")
+                                .fontWeight(.semibold)
+                            Text("Auto-fill from copied text")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            
             Section(header: Text("Patient Information")) {
                 TextField("Patient Name", text: $appState.medicalNotesDraft.patientName)
                     .onChange(of: appState.medicalNotesDraft.patientName) { _ in
@@ -152,7 +183,9 @@ struct MedicalNotesFormView: View {
             }
             
             Section {
-                Button(action: generatePDF) {
+                Button(action: {
+                    showDestinationPicker = true
+                }) {
                     HStack {
                         Spacer()
                         Image(systemName: "arrow.down.doc.fill")
@@ -169,19 +202,47 @@ struct MedicalNotesFormView: View {
         .onAppear {
             autoFillIfEmpty()
         }
+        .confirmationDialog("Choose Output", isPresented: $showDestinationPicker, titleVisibility: .visible) {
+            Button("Medical Notes") {
+                pendingDestination = .medicalNotes
+                generatePDF(for: .medicalNotes)
+            }
+            Button("Home Visit Record") {
+                pendingDestination = .homeVisitRecord
+                generatePDF(for: .homeVisitRecord)
+            }
+            Button("Cancel", role: .cancel) {}
+        }
         .sheet(isPresented: $showingPreview) {
-            if let data = pdfData {
-                PDFPreviewView(
-                    pdfData: data,
-                    filename: "\(appState.medicalNotesDraft.patientName) Notes.pdf",
-                    showingExport: $showingExport
-                )
+            Group {
+                if let data = pdfData {
+                    let filename: String = {
+                        let patientName = appState.medicalNotesDraft.patientName.isEmpty ? "Unknown" : appState.medicalNotesDraft.patientName
+                        switch pendingDestination {
+                        case .medicalNotes:
+                            return "\(patientName) Notes.pdf"
+                        case .homeVisitRecord:
+                            return "\(patientName) HV.pdf"
+                        }
+                    }()
+                    
+                    PDFPreviewView(
+                        pdfData: data,
+                        filename: filename,
+                        showingExport: $showingExport
+                    )
+                } else {
+                    EmptyView()
+                }
             }
         }
         .alert("Error", isPresented: $showingAlert) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(alertMessage)
+        }
+        .sheet(isPresented: $showingPasteParser) {
+            PasteParseView()
         }
     }
     
@@ -206,7 +267,16 @@ struct MedicalNotesFormView: View {
         appState.saveMedicalNotesDraft()
     }
     
-    private func generatePDF() {
+    private func generatePDF(for destination: ExportDestination) {
+        switch destination {
+        case .medicalNotes:
+            generateMedicalNotesPDF()
+        case .homeVisitRecord:
+            generateHVRecordPDF()
+        }
+    }
+    
+    private func generateMedicalNotesPDF() {
         guard !appState.medicalNotesDraft.patientName.isEmpty else {
             alertMessage = "Please enter a patient name before exporting."
             showingAlert = true
@@ -222,7 +292,7 @@ struct MedicalNotesFormView: View {
         appState.saveLastPatient(patient)
         
         // Get templates
-        let templates = appState.templates.filter { 
+        let templates = appState.templates.filter {
             $0.backgroundImageName.contains("AG_MedicalNotes")
         }.sorted { $0.pageIndex < $1.pageIndex }
         
@@ -235,7 +305,7 @@ struct MedicalNotesFormView: View {
         // Generate PDF
         let renderer = PDFRenderer()
         let pages = templates.compactMap { template -> RenderedPage? in
-            guard let image = UIImage(named: template.backgroundImageName) else {
+            guard let image = PlatformImage.load(named: template.backgroundImageName) else {
                 return nil
             }
             
@@ -267,4 +337,93 @@ struct MedicalNotesFormView: View {
             showingAlert = true
         }
     }
+    
+    private func generateHVRecordPDF() {
+        guard !appState.medicalNotesDraft.patientName.isEmpty else {
+            alertMessage = "Please enter a patient name before exporting."
+            showingAlert = true
+            return
+        }
+        
+        guard let template = appState.templates.first(where: {
+            $0.backgroundImageName.contains("AG_HomeVisitRecord")
+        }) else {
+            alertMessage = "Home Visit Record template not found. Please check Settings."
+            showingAlert = true
+            return
+        }
+        
+        guard let image = PlatformImage.load(named: template.backgroundImageName) else {
+            alertMessage = "Could not load form image. Please add AG_HomeVisitRecord to Assets."
+            showingAlert = true
+            return
+        }
+        
+        var instructions: [DrawInstruction] = []
+        
+        // Header fields
+        for field in template.fields {
+            if field.key.starts(with: "hv.") {
+                var text = appState.hvRecordDraft.value(for: field.key)
+                if field.key == "hv.clinicianName" && text.isEmpty {
+                    text = appState.medicalNotesDraft.clinicianName
+                }
+                instructions.append(DrawInstruction(
+                    text: text,
+                    frame: field.frame.cgRect,
+                    fontSize: field.fontSize,
+                    alignment: field.alignment,
+                    isMultiline: false
+                ))
+            }
+        }
+        
+        // Current visit + draft rows
+        let currentVisitRow = HVRecordRow(
+            clientName: appState.medicalNotesDraft.patientName,
+            clientNRIC: appState.medicalNotesDraft.patientNRIC,
+            dateTimeOfVisit: appState.medicalNotesDraft.date,
+            clientNOK: "",
+            signatureText: ""
+        )
+        let allRows = [currentVisitRow] + appState.hvRecordDraft.rows
+        
+        let rowFields = template.fields.filter { $0.key.starts(with: "row.") }
+        let rowHeight: CGFloat = 50
+        
+        for (rowIndex, row) in allRows.enumerated() {
+            let yOffset = CGFloat(rowIndex) * rowHeight
+            for field in rowFields {
+                let text = row.value(for: field.key)
+                var adjustedFrame = field.frame.cgRect
+                adjustedFrame.origin.y += yOffset
+                instructions.append(DrawInstruction(
+                    text: text,
+                    frame: adjustedFrame,
+                    fontSize: field.fontSize,
+                    alignment: field.alignment,
+                    isMultiline: false
+                ))
+            }
+        }
+        
+        let page = RenderedPage(backgroundImage: image, instructions: instructions)
+        
+        let renderer = PDFRenderer()
+        do {
+            pdfData = try renderer.render(pages: [page])
+            showingPreview = true
+        } catch {
+            alertMessage = "Failed to generate PDF: \(error.localizedDescription)"
+            showingAlert = true
+        }
+    }
 }
+
+#Preview {
+    NavigationView {
+        MedicalNotesFormView()
+            .environmentObject(AppState())
+    }
+}
+

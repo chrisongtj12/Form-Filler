@@ -16,6 +16,7 @@ struct PasteParseView: View {
     @State private var parsedNote: ClinicalNote?
     @State private var showingSummary = false
     @State private var summaryMessage = ""
+    @State private var showingSamplePicker = false
     
     var body: some View {
         NavigationView {
@@ -93,6 +94,22 @@ struct PasteParseView: View {
                         .cornerRadius(10)
                     }
                     .disabled(pastedText.isEmpty)
+                    
+                    #if DEBUG
+                    Button(action: {
+                        showingSamplePicker = true
+                    }) {
+                        HStack {
+                            Image(systemName: "doc.text.magnifyingglass")
+                            Text("Load Sample")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.purple.opacity(0.1))
+                        .foregroundColor(.purple)
+                        .cornerRadius(10)
+                    }
+                    #endif
                 }
                 .padding(.horizontal)
                 
@@ -126,6 +143,24 @@ struct PasteParseView: View {
             } message: {
                 Text(summaryMessage)
             }
+            .confirmationDialog("Load Sample Template", isPresented: $showingSamplePicker, titleVisibility: .visible) {
+                Button("Complete Example") {
+                    pastedText = SampleAvixoTemplates.complete
+                }
+                Button("Minimal Example") {
+                    pastedText = SampleAvixoTemplates.minimal
+                }
+                Button("Next Line Values") {
+                    pastedText = SampleAvixoTemplates.nextLineValues
+                }
+                Button("Variable Formatting") {
+                    pastedText = SampleAvixoTemplates.variableFormatting
+                }
+                Button("Complex Multi-line") {
+                    pastedText = SampleAvixoTemplates.complexMultiLine
+                }
+                Button("Cancel", role: .cancel) {}
+            }
         }
     }
     
@@ -137,8 +172,9 @@ struct PasteParseView: View {
         let note = parseAvixoDump(trimmed)
         parsedNote = note
         
-        // Show preview sheet
-        showingPreview = true
+        // If you want immediate application without preview, uncomment the next line and remove showingPreview
+        applyParsedData(note)
+        // showingPreview = true
     }
     
     private func applyParsedData(_ note: ClinicalNote) {
@@ -150,7 +186,7 @@ struct PasteParseView: View {
         summaryMessage = note.filledFieldsSummary
         showingSummary = true
         
-        // Close preview sheet
+        // Close preview sheet if open
         showingPreview = false
         
         // Dismiss after a short delay to let user see the summary
@@ -286,63 +322,4 @@ struct ParsePreviewView: View {
             }
         }
     }
-}
-
-#Preview("Paste Parse View - Empty") {
-    PasteParseView()
-        .environmentObject(AppState())
-}
-
-#Preview("Paste Parse View - With Sample") {
-    let view = PasteParseView()
-    view.pastedText = """
-    Name: John Tan
-    NRIC: S1234567A
-    Date of Visit: 2025-11-08
-    
-    BP: 120/80
-    SpO2: 98%
-    PR: 72
-    
-    Past Medical History:
-    Hypertension, Type 2 Diabetes Mellitus
-    
-    Presenting Complaint:
-    Patient presents with fever and cough for 3 days.
-    
-    Physical Examination:
-    Alert and conscious. Lungs clear bilaterally.
-    
-    Issues:
-    1. Upper respiratory tract infection
-    
-    Plan:
-    1. Paracetamol 500mg TDS
-    2. Review in 3 days if not improving
-    """
-    return view
-        .environmentObject(AppState())
-}
-
-#Preview("Parse Preview View") {
-    ParsePreviewView(
-        parsedNote: ClinicalNote(
-            patientName: "John Tan",
-            nric: "S1234567A",
-            dateOfVisit: "2025-11-08",
-            clientOrNOK: "",
-            bp: "120/80",
-            spo2: "98%",
-            pr: "72",
-            hypocount: "",
-            pmh: "Hypertension, Type 2 Diabetes Mellitus",
-            presentingComplaint: "Patient presents with fever and cough for 3 days.",
-            physicalExam: "Alert and conscious. Lungs clear bilaterally.",
-            issues: "1. Upper respiratory tract infection",
-            plan: "1. Paracetamol 500mg TDS\n2. Review in 3 days if not improving"
-        ),
-        onApply: {},
-        onCancel: {}
-    )
-    .environmentObject(AppState())
 }

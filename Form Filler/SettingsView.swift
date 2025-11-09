@@ -6,9 +6,32 @@
 //
 
 import SwiftUI
+import Combine
+
+// Adapter to bridge AppState to the generic TemplatePersisting interface
+final class AppStateTemplateAdapter: TemplatePersisting {
+    @Published var templates: [Template]
+    private let appState: AppState
+
+    init(appState: AppState) {
+        self.appState = appState
+        self.templates = appState.templates
+    }
+
+    func save() {
+        appState.saveTemplates(templates)
+        // Keep AppState in sync with any mutations
+        appState.templates = templates
+    }
+}
 
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
+    @State private var adapter: AppStateTemplateAdapter? = nil
+    
+    // Local UI state for export alert and import sheet
+    @State private var showingCopiedAlert = false
+    @State private var showingImport = false
     
     var body: some View {
         Form {
@@ -31,6 +54,7 @@ struct SettingsView: View {
                 }
             }
             
+            // Templates management and coordinate transfer live in the same section
             Section(header: Text("Templates")) {
                 NavigationLink(destination: TemplateEditorView()) {
                     HStack {
@@ -46,6 +70,19 @@ struct SettingsView: View {
                         Image(systemName: "arrow.counterclockwise")
                         Text("Restore Default Templates")
                     }
+                }
+                
+                // Export coordinates row
+                Button("Export coordinates") {
+                    guard let adapter else { return }
+                    let json = makeExportJSON(from: adapter.templates)
+                    Clipboard.copy(json)
+                    showingCopiedAlert = true
+                }
+                
+                // Import coordinates row
+                Button("Import coordinates") {
+                    showingImport = true
                 }
             }
             
@@ -64,5 +101,39 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
+        // Create the adapter once when the view appears
+        .onAppear {
+            if adapter == nil {
+                adapter = AppStateTemplateAdapter(appState: appState)
+            }
+        }
+        // Export alert
+        .alert("Copied", isPresented: $showingCopiedAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Template coordinates copied to clipboard.")
+        }
+        // Import sheet – pass the same store environment object
+        .sheet(isPresented: $showingImport) {
+            if let adapter {
+                ImportCoordinatesSheet<AppStateTemplateAdapter>()
+                    .environmentObject(adapter)
+            } else {
+                // Fallback: if adapter isn’t ready, show a spinner briefly
+                ProgressView()
+                    .onAppear {
+                        if adapter == nil {
+                            adapter = AppStateTemplateAdapter(appState: appState)
+                        }
+                    }
+            }
+        }
+    }
+}
+
+#Preview {
+    NavigationView {
+        SettingsView()
+            .environmentObject(AppState())
     }
 }
