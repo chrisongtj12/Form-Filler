@@ -33,6 +33,9 @@ struct SettingsView: View {
     @State private var showingCopiedAlert = false
     @State private var showingImport = false
     
+    // BV Notes settings view model (persist across navigations)
+    @StateObject private var bvNotesViewModel = BVNotesViewModel()
+    
     var body: some View {
         Form {
             Section(header: Text("Clinician Profile")) {
@@ -52,6 +55,22 @@ struct SettingsView: View {
                     Text("No patient data yet")
                         .foregroundColor(.secondary)
                 }
+            }
+            
+            // BV Notes settings lives in main Settings now
+            Section(header: Text("BV Notes")) {
+                NavigationLink {
+                    // Reusable settings view from BV Notes
+                    BVNotesSettingsView(viewModel: bvNotesViewModel)
+                } label: {
+                    HStack {
+                        Image(systemName: "cross.case")
+                        Text("BV Notes Settings")
+                    }
+                }
+                Text("Configure global vaccine lot numbers and milestone templates used by BV Notes.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
             
             // Templates management and coordinate transfer live in the same section

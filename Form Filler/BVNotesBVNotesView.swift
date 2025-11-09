@@ -4,25 +4,14 @@
 //
 //  BV Notes (Baby Vaccination Notes) - Main UI
 //
-//  WORKFLOW:
-//  1. Left sidebar: Select milestone (2m, 4m, 6m, 12m, 15m, 18m)
-//  2. Right pane: Fill out visit details, select vaccines, enter lot numbers
-//  3. View generated clinical note in readable table format
-//  4. Copy to clipboard for pasting into Avixo
-//
-//  FEATURES:
-//  - PCV mutual exclusion (only one of PCV13/15/20 can be selected)
-//  - Optional vaccines require payment mode (except Influenza)
-//  - Global vaccine settings (lot numbers + milestone templates)
-//  - Auto-save state per milestone
-//  - Side effects note quick-insert
+//  Settings have been moved to the main app Settings page.
+//  This view no longer presents its own settings UI.
 //
 
 import SwiftUI
 
 struct BVNotesView: View {
     @StateObject private var viewModel = BVNotesViewModel()
-    @State private var showingSettings = false
     
     var body: some View {
         GeometryReader { geometry in
@@ -31,7 +20,7 @@ struct BVNotesView: View {
                 HStack(spacing: 0) {
                     // Left: Milestone sidebar
                     milestonesSidebar
-                        .frame(width: 240)
+                        .frame(width: 280)
                     
                     Divider()
                     
@@ -41,10 +30,10 @@ struct BVNotesView: View {
             } else {
                 // iPhone: Stacked layout
                 VStack(spacing: 0) {
-                    // Milestone picker at top
-                    milestonePicker
+                    // Milestone grid at top (two rows / 3 columns)
+                    milestoneGridCompact
                         .padding()
-                        .background(Color(.systemGray6))
+                        .background(Color(.systemGroupedBackground)) // adaptive
                     
                     Divider()
                     
@@ -55,12 +44,9 @@ struct BVNotesView: View {
         }
         .navigationTitle("BV Notes")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingSettings) {
-            VaccineSettingsSheet(viewModel: viewModel)
-        }
     }
     
-    // MARK: - Milestone Sidebar (iPad)
+    // MARK: - Milestone Sidebar (iPad) with two-column grid
     
     private var milestonesSidebar: some View {
         VStack(spacing: 0) {
@@ -76,11 +62,14 @@ struct BVNotesView: View {
             }
             .padding()
             .frame(maxWidth: .infinity)
-            .background(Color(.systemGray6))
+            .background(Color(.secondarySystemGroupedBackground)) // adaptive section header
             
-            // Milestone list
+            // Milestone grid (2 columns)
             ScrollView {
-                VStack(spacing: 8) {
+                LazyVGrid(columns: [
+                    GridItem(.flexible(), spacing: 12),
+                    GridItem(.flexible(), spacing: 12)
+                ], spacing: 12) {
                     ForEach(Milestone.allCases) { milestone in
                         MilestoneListItem(
                             milestone: milestone,
@@ -88,48 +77,46 @@ struct BVNotesView: View {
                         ) {
                             viewModel.selectMilestone(milestone)
                         }
-                        .padding(.horizontal, 12)
                     }
                 }
-                .padding(.vertical, 12)
+                .padding(12)
             }
+            .background(Color(.systemGroupedBackground)) // adaptive
             
             Spacer()
-            
-            // Settings button at bottom
-            Button(action: {
-                showingSettings = true
-            }) {
-                HStack {
-                    Image(systemName: "gear")
-                    Text("Vaccine Settings")
-                        .font(.subheadline)
-                }
-                .foregroundColor(.blue)
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Color(.systemGray6))
-            }
         }
-        .background(Color(.systemBackground))
+        .background(Color(.systemGroupedBackground)) // whole sidebar adaptive
     }
     
-    // MARK: - Milestone Picker (iPhone)
+    // MARK: - Milestone Grid (iPhone) two rows
     
-    private var milestonePicker: some View {
-        VStack(spacing: 12) {
+    private var milestoneGridCompact: some View {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Select Milestone")
                 .font(.headline)
             
-            Picker("Milestone", selection: Binding(
-                get: { viewModel.currentState.milestone },
-                set: { viewModel.selectMilestone($0) }
-            )) {
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 10),
+                GridItem(.flexible(), spacing: 10),
+                GridItem(.flexible(), spacing: 10)
+            ], spacing: 10) {
                 ForEach(Milestone.allCases) { milestone in
-                    Text(milestone.displayName).tag(milestone)
+                    let isSelected = viewModel.currentState.milestone == milestone
+                    Button {
+                        viewModel.selectMilestone(milestone)
+                    } label: {
+                        Text(milestone.displayName)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(isSelected ? .white : .primary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(isSelected ? Color.blue : Color(.secondarySystemGroupedBackground))
+                            .cornerRadius(8)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
-            .pickerStyle(.segmented)
         }
     }
     
@@ -163,7 +150,7 @@ struct BVNotesView: View {
             }
             .padding()
         }
-        .background(Color(.systemGray6))
+        .background(Color(.systemGroupedBackground)) // page background adaptive
     }
     
     // MARK: - Visit Questions Section
@@ -249,7 +236,7 @@ struct BVNotesView: View {
                         }
                     }
                     .padding()
-                    .background(selection.selected ? Color.blue.opacity(0.05) : Color(.systemGray6))
+                    .background(selection.selected ? Color.blue.opacity(0.05) : Color(.secondarySystemGroupedBackground))
                     .cornerRadius(8)
                     
                     if index < viewModel.currentState.selections.count - 1 {
@@ -288,7 +275,7 @@ struct BVNotesView: View {
                 ))
                 .frame(minHeight: 120)
                 .padding(8)
-                .background(Color(.systemGray6))
+                .background(Color(.secondarySystemGroupedBackground))
                 .cornerRadius(8)
                 
                 HStack {
@@ -326,7 +313,6 @@ struct BVNotesView: View {
         ClinicalNotesPreview(
             noteText: viewModel.generateClinicalNote(),
             onCopy: {
-                // Optional: Add haptic feedback
                 #if os(iOS)
                 let generator = UINotificationFeedbackGenerator()
                 generator.notificationOccurred(.success)
@@ -350,22 +336,4 @@ struct BVNotesView: View {
         BVNotesView()
     }
     .previewDevice("iPhone 15 Pro")
-}
-
-#Preview("BV Notes View - 12 Month") {
-    let viewModel = BVNotesViewModel()
-    viewModel.selectMilestone(.m12)
-    
-    return NavigationView {
-        BVNotesView()
-    }
-}
-
-#Preview("BV Notes View - 15 Month with Optional") {
-    let viewModel = BVNotesViewModel()
-    viewModel.selectMilestone(.m15)
-    
-    return NavigationView {
-        BVNotesView()
-    }
 }

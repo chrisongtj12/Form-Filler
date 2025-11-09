@@ -146,7 +146,11 @@ class BVNotesViewModel: ObservableObject {
     }
     
     func appendSideEffectsNote() {
-        let sideEffectsText = "No immediate adverse events observed post-vaccination."
+        // Updated standard side effects note (two lines)
+        let sideEffectsText = """
+        Explained side effects of all vaccinations.
+        Tolerated vaccination well
+        """
         
         if currentState.additionalNotes.isEmpty {
             currentState.additionalNotes = sideEffectsText

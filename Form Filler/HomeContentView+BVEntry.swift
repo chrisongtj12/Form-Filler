@@ -49,8 +49,9 @@ struct BVNotesButtonStyle: ButtonStyle {
         configuration.label
             .background(
                 ZStack {
+                    // Change BV Notes to BLUE gradient
                     LinearGradient(
-                        colors: [Color.green, Color.green.opacity(0.8)],
+                        colors: [Color.blue, Color.blue.opacity(0.85)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )

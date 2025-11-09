@@ -14,8 +14,9 @@ struct HomeView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Watercolor-like paper background
-                TexturedPaperBackground()
+                // Solid adaptive background (no texture)
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
                 
                 ScrollView {
                     VStack(spacing: 30) {
@@ -35,61 +36,94 @@ struct HomeView: View {
                         }
                         .padding(.top, 40)
                         
-                        // Institution Buttons (textured)
+                        // BV Notes (Baby Vaccination) Section
+                        VStack(spacing: 16) {
+                            Text("Clinical Notes Tools")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                            
+                            // BV Notes card (blue gradient style defined in BVNotesButtonStyle)
+                            bvNotesCard
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        // Institution Buttons (override to GREEN)
                         VStack(spacing: 16) {
                             Text("Select Institution")
                                 .font(.headline)
                                 .foregroundColor(.secondary)
                             
-                            // Active Global
+                            // Active Global (green)
                             NavigationLink {
                                 InstitutionFormListView(institution: .activeGlobal)
                             } label: {
                                 HStack(spacing: 14) {
                                     Image(systemName: Institution.activeGlobal.iconName)
                                         .imageScale(.large)
+                                        .foregroundColor(.white)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(Institution.activeGlobal.displayName)
+                                            .foregroundColor(.white)
                                         Text(Institution.activeGlobal.subtitle)
                                             .font(.subheadline)
-                                            .opacity(0.9)
+                                            .foregroundColor(.white.opacity(0.9))
                                     }
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                         .font(.headline)
+                                        .foregroundColor(.white.opacity(0.8))
                                 }
                                 .padding(.horizontal, 16)
                                 .frame(maxWidth: .infinity, minHeight: 68)
+                                .background(
+                                    LinearGradient(
+                                        colors: [Color.green, Color.green.opacity(0.85)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .cornerRadius(12)
+                                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
                             }
-                            .buttonStyle(TexturedButtonStyle(institution: .activeGlobal))
                             
-                            // Lentor
+                            // Lentor (green)
                             NavigationLink {
                                 InstitutionFormListView(institution: .lentor)
                             } label: {
                                 HStack(spacing: 14) {
                                     Image(systemName: Institution.lentor.iconName)
                                         .imageScale(.large)
+                                        .foregroundColor(.white)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(Institution.lentor.displayName)
+                                            .foregroundColor(.white)
                                         Text(Institution.lentor.subtitle)
                                             .font(.subheadline)
-                                            .opacity(0.9)
+                                            .foregroundColor(.white.opacity(0.9))
                                     }
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                         .font(.headline)
+                                        .foregroundColor(.white.opacity(0.8))
                                 }
                                 .padding(.horizontal, 16)
                                 .frame(maxWidth: .infinity, minHeight: 68)
+                                .background(
+                                    LinearGradient(
+                                        colors: [Color.green, Color.green.opacity(0.85)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .cornerRadius(12)
+                                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
                             }
-                            .buttonStyle(TexturedButtonStyle(institution: .lentor))
                         }
                         .padding(.horizontal, 20)
                         
                         Spacer(minLength: 40)
                         
-                        // Settings Link (kept simple; you can also style it)
+                        // Settings Link
                         NavigationLink(destination: SettingsView()) {
                             HStack {
                                 Image(systemName: "gear")
@@ -203,20 +237,20 @@ struct ContentView: View {
     }
 }
 
-#Preview("Home View") {
-    // Prepare an AppState with a filled clinician to avoid showing the setup sheet in preview
+#Preview("Home – Light") {
     let previewState = AppState()
     previewState.clinician.displayName = "Preview Doctor"
     previewState.clinician.mcrNumber = "M12345Z"
     return HomeView()
         .environmentObject(previewState)
+        .preferredColorScheme(.light)
 }
 
-#Preview("Clinician Setup") {
-    let state = AppState()
-    // Keep empty to demonstrate disabled interactive dismiss when name is empty
-    state.clinician.displayName = ""
-    state.clinician.mcrNumber = ""
-    return ClinicianSetupView(isPresented: .constant(true))
-        .environmentObject(state)
+#Preview("Home – Dark") {
+    let previewState = AppState()
+    previewState.clinician.displayName = "Preview Doctor"
+    previewState.clinician.mcrNumber = "M12345Z"
+    return HomeView()
+        .environmentObject(previewState)
+        .preferredColorScheme(.dark)
 }

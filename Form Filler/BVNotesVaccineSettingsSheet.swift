@@ -2,105 +2,101 @@
 //  VaccineSettingsSheet.swift
 //  Speedoc Clinical Notes
 //
-//  BV Notes - Global vaccine settings modal
+//  BV Notes - Global vaccine settings (reusable view + optional sheet wrapper)
 //
 
 import SwiftUI
 
-struct VaccineSettingsSheet: View {
+// MARK: - Reusable BV Notes Settings View (embed this in your main Settings page)
+
+struct BVNotesSettingsView: View {
     @ObservedObject var viewModel: BVNotesViewModel
-    @Environment(\.dismiss) var dismiss
-    
     @State private var selectedMilestoneForTemplate: Milestone = .m12
     @State private var showingRestoreAlert = false
     
     var body: some View {
-        NavigationView {
-            Form {
-                // MARK: - Global Lot Numbers Section
-                Section {
-                    ForEach(Vaccine.allCases) { vaccine in
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(vaccine.lotNumberKey)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                            
-                            TextField("Lot Number", text: lotNumberBinding(for: vaccine))
-                                .textFieldStyle(.roundedBorder)
-                                .textInputAutocapitalization(.characters)
-                        }
-                        .padding(.vertical, 4)
+        Form {
+            // MARK: - Global Lot Numbers Section
+            Section {
+                ForEach(Vaccine.allCases) { vaccine in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(vaccine.lotNumberKey)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        
+                        TextField("Lot Number", text: lotNumberBinding(for: vaccine))
+                            .textFieldStyle(.roundedBorder)
+                            .textInputAutocapitalization(.characters)
                     }
-                } header: {
-                    Text("Global Vaccine Lot Numbers")
-                } footer: {
-                    Text("These lot numbers will be used as defaults when creating new vaccination records.")
-                        .font(.caption)
+                    .padding(.vertical, 4)
                 }
-                
-                // MARK: - Milestone Templates Section
-                Section {
-                    Picker("Select Milestone", selection: $selectedMilestoneForTemplate) {
-                        ForEach(Milestone.allCases) { milestone in
-                            Text(milestone.displayName).tag(milestone)
-                        }
+            } header: {
+                Text("Global Vaccine Lot Numbers")
+            } footer: {
+                Text("These lot numbers will be used as defaults when creating new vaccination records.")
+                    .font(.caption)
+            }
+            
+            // MARK: - Milestone Templates Section
+            Section {
+                Picker("Select Milestone", selection: $selectedMilestoneForTemplate) {
+                    ForEach(Milestone.allCases) { milestone in
+                        Text(milestone.displayName).tag(milestone)
                     }
-                    .pickerStyle(.menu)
-                    
-                    NavigationLink(destination: MilestoneTemplateEditor(
-                        viewModel: viewModel,
-                        milestone: selectedMilestoneForTemplate
-                    )) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Edit Template")
-                                    .font(.body)
-                                
-                                Text("Configure default vaccines & follow-up plan")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
+                }
+                .pickerStyle(.menu)
+                
+                NavigationLink(destination: MilestoneTemplateEditor(
+                    viewModel: viewModel,
+                    milestone: selectedMilestoneForTemplate
+                )) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Edit Template")
+                                .font(.body)
                             
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
+                            Text("Configure default vaccines & follow-up plan")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
-                } header: {
-                    Text("Milestone Templates")
-                } footer: {
-                    Text("Customize which vaccines are pre-selected and the default follow-up plan for each milestone.")
-                        .font(.caption)
+                }
+            } header: {
+                Text("Milestone Templates")
+            } footer: {
+                Text("Customize which vaccines are pre-selected and the default follow-up plan for each milestone.")
+                    .font(.caption)
+            }
+            
+            // MARK: - Actions
+            Section {
+                Button(role: .destructive) {
+                    showingRestoreAlert = true
+                } label: {
+                    Label("Restore Defaults", systemImage: "arrow.counterclockwise")
                 }
             }
-            .navigationTitle("Vaccine Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Restore Defaults") {
-                        showingRestoreAlert = true
-                    }
-                    .foregroundColor(.orange)
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        viewModel.saveGlobalSettings()
-                        dismiss()
-                    }
-                    .fontWeight(.semibold)
-                }
+        }
+        .navigationTitle("BV Notes Settings")
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("Restore Defaults?", isPresented: $showingRestoreAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Restore", role: .destructive) {
+                viewModel.restoreDefaultSettings()
+                viewModel.saveGlobalSettings()
             }
-            .alert("Restore Defaults?", isPresented: $showingRestoreAlert) {
-                Button("Cancel", role: .cancel) { }
-                Button("Restore", role: .destructive) {
-                    viewModel.restoreDefaultSettings()
-                }
-            } message: {
-                Text("This will reset all lot numbers and milestone templates to their default values. This action cannot be undone.")
-            }
+        } message: {
+            Text("This will reset all lot numbers and milestone templates to their default values. This action cannot be undone.")
+        }
+        .onDisappear {
+            // Persist when leaving settings
+            viewModel.saveGlobalSettings()
         }
     }
     
@@ -113,6 +109,29 @@ struct VaccineSettingsSheet: View {
                 viewModel.globalSettings.lotNumbers[vaccine.rawValue] = newValue
             }
         )
+    }
+}
+
+// MARK: - Backward-compatible sheet wrapper (optional, can be removed if unused)
+
+struct VaccineSettingsSheet: View {
+    @ObservedObject var viewModel: BVNotesViewModel
+    var startOnLotNumbers: Bool = true // kept for API compatibility
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        NavigationView {
+            BVNotesSettingsView(viewModel: viewModel)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") {
+                            viewModel.saveGlobalSettings()
+                            dismiss()
+                        }
+                        .fontWeight(.semibold)
+                    }
+                }
+        }
     }
 }
 
@@ -141,7 +160,7 @@ struct MilestoneTemplateEditor: View {
                     .foregroundColor(.secondary)
             }
             
-            Section("Vaccines for \(milestone.displayName)") {
+            Section {
                 ForEach(milestone.applicableVaccines) { vaccine in
                     VStack(alignment: .leading, spacing: 12) {
                         // Selection toggle
@@ -175,12 +194,16 @@ struct MilestoneTemplateEditor: View {
                     }
                     .padding(.vertical, 4)
                 }
+            } header: {
+                Text("Vaccines for \(milestone.displayName)")
             }
             
-            Section("Follow-up Plan") {
+            Section {
                 TextEditor(text: $template.followUpPlan)
                     .frame(minHeight: 100)
                     .font(.body)
+            } header: {
+                Text("Follow-up Plan")
             } footer: {
                 Text("This text will be pre-filled in the Additional Notes field for new \(milestone.displayName) records.")
                     .font(.caption)
@@ -189,6 +212,7 @@ struct MilestoneTemplateEditor: View {
             Section {
                 Button("Save Template") {
                     viewModel.updateMilestoneTemplate(milestone, template: template)
+                    viewModel.saveGlobalSettings()
                 }
                 .frame(maxWidth: .infinity)
                 .foregroundColor(.blue)
@@ -221,16 +245,16 @@ struct MilestoneTemplateEditor: View {
     }
 }
 
-// MARK: - Preview
+// MARK: - Previews
 
-#Preview("Vaccine Settings Sheet") {
-    let viewModel = BVNotesViewModel()
-    return VaccineSettingsSheet(viewModel: viewModel)
+#Preview("BV Notes Settings (embedded)") {
+    NavigationView {
+        BVNotesSettingsView(viewModel: BVNotesViewModel())
+    }
 }
 
 #Preview("Milestone Template Editor") {
-    let viewModel = BVNotesViewModel()
-    return NavigationView {
-        MilestoneTemplateEditor(viewModel: viewModel, milestone: .m12)
+    NavigationView {
+        MilestoneTemplateEditor(viewModel: BVNotesViewModel(), milestone: .m12)
     }
 }
