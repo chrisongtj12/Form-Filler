@@ -296,21 +296,54 @@ struct PDFPreviewView: View {
                 }
                 
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    #if os(iOS)
                     Button("Export") {
                         showingShareSheet = true
                     }
+                    #elseif os(macOS)
+                    Button("Export") {
+                        presentSavePanel(data: pdfData, suggestedFilename: filename)
+                    }
+                    #endif
                 }
             }
+            #if os(iOS)
             .sheet(isPresented: $showingShareSheet) {
-                #if os(iOS)
                 ShareSheet(items: [PDFFile(data: pdfData, filename: filename)])
-                #elseif os(macOS)
-                MacSavePanel(data: pdfData, suggestedFilename: filename)
-                #endif
             }
+            #endif
         }
     }
 }
+
+#if os(macOS)
+// Present NSSavePanel directly from the current NSWindow to avoid ShareKit path
+private func presentSavePanel(data: Data, suggestedFilename: String) {
+    var name = suggestedFilename.trimmingCharacters(in: .whitespacesAndNewlines)
+    if name.isEmpty { name = "Export.pdf" }
+    if name.lowercased().hasSuffix(".pdf") == false {
+        name += ".pdf"
+    }
+    
+    let panel = NSSavePanel()
+    panel.allowedFileTypes = ["pdf"]
+    panel.canCreateDirectories = true
+    panel.nameFieldStringValue = name
+    
+    if let window = NSApp.keyWindow ?? NSApp.mainWindow ?? NSApplication.shared.windows.first {
+        panel.beginSheetModal(for: window) { response in
+            if response == .OK, let url = panel.url {
+                try? data.write(to: url)
+            }
+        }
+    } else {
+        let response = panel.runModal()
+        if response == .OK, let url = panel.url {
+            try? data.write(to: url)
+        }
+    }
+}
+#endif
 
 // MARK: - CrossPlatform PDFKit View
 
@@ -382,42 +415,6 @@ struct CrossPlatformPDFView: NSViewRepresentable {
         nsView.document = document
     }
 }
-
-// Simple NSSavePanel wrapper to export PDF
-struct MacSavePanel: View {
-    let data: Data
-    let suggestedFilename: String
-    
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        VStack {
-            Text("Save PDF")
-                .font(.headline)
-            Text("Click Save to choose a location for the exported PDF.")
-                .foregroundColor(.secondary)
-            HStack {
-                Button("Cancel") { dismiss() }
-                Spacer()
-                Button("Save") {
-                    let panel = NSSavePanel()
-                    panel.allowedFileTypes = ["pdf"]
-                    panel.nameFieldStringValue = suggestedFilename
-                    panel.begin { response in
-                        if response == .OK, let url = panel.url {
-                            try? data.write(to: url)
-                        }
-                        dismiss()
-                    }
-                }
-                .keyboardShortcut(.defaultAction)
-            }
-            .padding(.top, 16)
-        }
-        .padding(24)
-        .frame(width: 380)
-    }
-}
 #endif
 
 // MARK: - Previews
@@ -463,4 +460,3 @@ import UIKit
         )
     }
 }
-

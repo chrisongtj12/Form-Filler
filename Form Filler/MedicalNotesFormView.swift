@@ -217,7 +217,8 @@ struct MedicalNotesFormView: View {
             Group {
                 if let data = pdfData {
                     let filename: String = {
-                        let patientName = appState.medicalNotesDraft.patientName.isEmpty ? "Unknown" : appState.medicalNotesDraft.patientName
+                        let rawName = appState.medicalNotesDraft.patientName.isEmpty ? "Unknown" : appState.medicalNotesDraft.patientName
+                        let patientName = sanitizeFilename(rawName)
                         switch pendingDestination {
                         case .medicalNotes:
                             return "\(patientName) Notes.pdf"
@@ -418,6 +419,19 @@ struct MedicalNotesFormView: View {
             showingAlert = true
         }
     }
+    
+    // MARK: - Filename Sanitizer
+    
+    private func sanitizeFilename(_ name: String) -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Disallowed on most filesystems: / \ ? % * : | " < >
+        let illegal = CharacterSet(charactersIn: "/\\?%*:|\"<>")
+        let components = trimmed.components(separatedBy: illegal)
+        let collapsed = components.filter { !$0.isEmpty }.joined(separator: " ")
+        // Also collapse repeated spaces
+        let normalized = collapsed.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+        return normalized.isEmpty ? "Unknown" : normalized
+    }
 }
 
 #Preview {
@@ -426,4 +440,3 @@ struct MedicalNotesFormView: View {
             .environmentObject(AppState())
     }
 }
-

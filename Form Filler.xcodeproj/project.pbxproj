@@ -6,9 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		46DEBCA72EC37C4A00060486 /* PDFRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46DEBCA62EC37C4A00060486 /* PDFRenderer.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		46C06DB62EC06BFF00348B8C /* Clinical Notes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Clinical Notes.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		46D152682EBF6BA3006EAA0B /* Form Filler.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Form Filler.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		46DEBCA62EC37C4A00060486 /* PDFRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFRenderer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -62,6 +67,7 @@
 				46D1526A2EBF6BA3006EAA0B /* Form Filler */,
 				46C06DB72EC06BFF00348B8C /* Clinical Notes */,
 				46D152692EBF6BA3006EAA0B /* Products */,
+				46DEBCA62EC37C4A00060486 /* PDFRenderer.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -181,6 +187,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46DEBCA72EC37C4A00060486 /* PDFRenderer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

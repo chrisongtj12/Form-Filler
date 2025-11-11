@@ -15,8 +15,9 @@ nonisolated struct Form_FillerDocument: FileDocument {
         self.text = text
     }
 
-    static let readableContentTypes = [
-        UTType(importedAs: "com.example.plain-text")
+    // Use a public UTI instead of a custom "com.example.*"
+    static let readableContentTypes: [UTType] = [
+        .plainText // maps to "public.plain-text"
     ]
 
     init(configuration: ReadConfiguration) throws {
