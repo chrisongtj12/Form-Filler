@@ -2,7 +2,9 @@
 //  PDFRenderer.swift
 //  Speedoc Clinical Notes
 //
-//  PDF generation with background images and text overlay
+//  Canonical PDF generation with background images and text overlay
+//  Merged version (source of truth) based on the FormFiller implementation,
+//  preserving the more defensive macOS save panel behavior.
 //
 
 import SwiftUI
@@ -266,6 +268,30 @@ class PDFRenderer {
     }
 }
 
+// MARK: - PDF FileDocument for .fileExporter (iOS)
+
+#if os(iOS)
+import UniformTypeIdentifiers
+
+struct PDFDataDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.pdf] }
+    var data: Data
+    
+    init(data: Data) {
+        self.data = data
+    }
+    
+    init(configuration: ReadConfiguration) throws {
+        // Not used for exporting-only scenario
+        self.data = configuration.file.regularFileContents ?? Data()
+    }
+    
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
+    }
+}
+#endif
+
 // MARK: - PDF Preview View
 
 struct PDFPreviewView: View {
@@ -275,17 +301,25 @@ struct PDFPreviewView: View {
     @Environment(\.dismiss) var dismiss
     
     @State private var showingShareSheet = false
+    #if os(iOS)
+    @State private var showingFileExporter = false
+    @State private var exportError: Error?
+    #endif
     
     var body: some View {
         NavigationView {
             VStack {
                 if let pdfDocument = PDFDocument(data: pdfData) {
                     CrossPlatformPDFView(document: pdfDocument)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .frame(minHeight: 600) // make it noticeably larger
                 } else {
                     Text("Failed to load PDF preview")
                         .foregroundColor(.red)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .ignoresSafeArea(edges: .bottom)
             .navigationTitle("Preview")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -300,6 +334,9 @@ struct PDFPreviewView: View {
                     Button("Export") {
                         showingShareSheet = true
                     }
+                    Button("Save to Files") {
+                        showingFileExporter = true
+                    }
                     #elseif os(macOS)
                     Button("Export") {
                         presentSavePanel(data: pdfData, suggestedFilename: filename)
@@ -311,35 +348,90 @@ struct PDFPreviewView: View {
             .sheet(isPresented: $showingShareSheet) {
                 ShareSheet(items: [PDFFile(data: pdfData, filename: filename)])
             }
+            // Prefer large, nearly full-screen sheet for preview on iOS
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            // SwiftUI file exporter to save directly to Files
+            .fileExporter(
+                isPresented: $showingFileExporter,
+                document: PDFDataDocument(data: pdfData),
+                contentType: .pdf,
+                defaultFilename: sanitizedDefaultFilename(filename)
+            ) { result in
+                if case .failure(let error) = result {
+                    exportError = error
+                }
+            }
+            .alert("Save Failed", isPresented: Binding(
+                get: { exportError != nil },
+                set: { if !$0 { exportError = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(exportError?.localizedDescription ?? "Unknown error")
+            }
             #endif
         }
+        #if os(iOS)
+        // Make the outermost sheet (presenting this view) prefer large as well
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+        #endif
     }
+    
+    #if os(iOS)
+    private func sanitizedDefaultFilename(_ name: String) -> String {
+        var s = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.isEmpty { s = "Export.pdf" }
+        if s.lowercased().hasSuffix(".pdf") == false {
+            s += ".pdf"
+        }
+        return s
+    }
+    #endif
 }
 
 #if os(macOS)
-// Present NSSavePanel directly from the current NSWindow to avoid ShareKit path
+// Present NSSavePanel directly from the current NSWindow with robust fallbacks.
 private func presentSavePanel(data: Data, suggestedFilename: String) {
-    var name = suggestedFilename.trimmingCharacters(in: .whitespacesAndNewlines)
-    if name.isEmpty { name = "Export.pdf" }
-    if name.lowercased().hasSuffix(".pdf") == false {
-        name += ".pdf"
-    }
-    
-    let panel = NSSavePanel()
-    panel.allowedFileTypes = ["pdf"]
-    panel.canCreateDirectories = true
-    panel.nameFieldStringValue = name
-    
-    if let window = NSApp.keyWindow ?? NSApp.mainWindow ?? NSApplication.shared.windows.first {
-        panel.beginSheetModal(for: window) { response in
-            if response == .OK, let url = panel.url {
-                try? data.write(to: url)
-            }
+    DispatchQueue.main.async {
+        var name = suggestedFilename.trimmingCharacters(in: .whitespacesAndNewlines)
+        if name.isEmpty { name = "Export.pdf" }
+        if name.lowercased().hasSuffix(".pdf") == false {
+            name += ".pdf"
         }
-    } else {
-        let response = panel.runModal()
-        if response == .OK, let url = panel.url {
-            try? data.write(to: url)
+
+        let panel = NSSavePanel()
+        panel.allowedFileTypes = ["pdf"]
+        panel.canCreateDirectories = true
+        panel.nameFieldStringValue = name
+
+        // Find a suitable window
+        let window = NSApp.keyWindow
+            ?? NSApp.mainWindow
+            ?? NSApplication.shared.windows.first { $0.canBecomeKey }
+            ?? NSApplication.shared.windows.first
+
+        if let window {
+            panel.beginSheetModal(for: window) { response in
+                if response == .OK, let url = panel.url {
+                    do {
+                        try data.write(to: url, options: .atomic)
+                    } catch {
+                        NSLog("Failed to write PDF to \(url): \(error)")
+                    }
+                }
+            }
+        } else {
+            // Fallback to app-modal if no window is available
+            let response = panel.runModal()
+            if response == .OK, let url = panel.url {
+                do {
+                    try data.write(to: url, options: .atomic)
+                } catch {
+                    NSLog("Failed to write PDF to \(url): \(error)")
+                }
+            }
         }
     }
 }
