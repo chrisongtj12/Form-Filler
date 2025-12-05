@@ -254,3 +254,11 @@ struct ContentView: View {
         .environmentObject(previewState)
         .preferredColorScheme(.dark)
 }
+
+#Preview("ContentView") {
+    let previewState = AppState()
+    previewState.clinician.displayName = "Preview Doctor"
+    previewState.clinician.mcrNumber = "M12345Z"
+    return ContentView()
+        .environmentObject(previewState)
+}
