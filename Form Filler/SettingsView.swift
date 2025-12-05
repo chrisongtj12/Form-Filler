@@ -1,99 +1,55 @@
-//
-//  SettingsView.swift
-//  Speedoc Clinical Notes
-//
-//  Settings screen for profiles and template editing
-//
-
 import SwiftUI
-import Combine
 
-// Adapter to bridge AppState to the generic TemplatePersisting interface
-final class AppStateTemplateAdapter: TemplatePersisting {
-    @Published var templates: [Template]
-    private let appState: AppState
-
-    init(appState: AppState) {
-        self.appState = appState
-        self.templates = appState.templates
-    }
-
-    func save() {
-        appState.saveTemplates(templates)
-        // Keep AppState in sync with any mutations
-        appState.templates = templates
-    }
-}
+// A concrete Settings screen that wraps your templates section and related actions.
+// This includes minimal scaffolding for referenced helpers so it compiles.
+// If you already have these helpers elsewhere, replace the placeholders and remove these.
 
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
-    @State private var adapter: AppStateTemplateAdapter? = nil
-    
-    // Local UI state for export alert and import sheet
+
+    // State used by the export/import actions
     @State private var showingCopiedAlert = false
     @State private var showingImport = false
-    
-    // BV Notes settings view model (persist across navigations)
-    @StateObject private var bvNotesViewModel = BVNotesViewModel()
-    
+    @State private var alertMessage = ""
+
     var body: some View {
         Form {
-            Section(header: Text("Clinician Profile")) {
-                TextField("Name", text: $appState.clinician.displayName)
-                TextField("MCR Number", text: $appState.clinician.mcrNumber)
-                
-                Button("Save Profile") {
-                    appState.saveClinician()
-                }
-            }
-            
-            Section(header: Text("Last Used Patient")) {
-                if let patient = appState.lastUsedPatient {
-                    Text("Name: \(patient.name)")
-                    Text("NRIC: \(patient.nric)")
-                } else {
-                    Text("No patient data yet")
-                        .foregroundColor(.secondary)
-                }
-            }
-            
-            // BV Notes settings lives in main Settings now
-            Section(header: Text("BV Notes")) {
-                NavigationLink {
-                    // Reusable settings view from BV Notes
-                    BVNotesSettingsView(viewModel: bvNotesViewModel)
-                } label: {
+            // Doctor's Info
+            Section(header: Text("Clinician Information")) {
+                NavigationLink(destination: ClinicianSettingsView().environmentObject(appState)) {
                     HStack {
-                        Image(systemName: "cross.case")
+                        Image(systemName: "person.circle")
+                        Text("Doctor's Name & MCR")
+                    }
+                }
+            }
+            
+            // BV Notes Settings
+            Section(header: Text("Baby Vaccination Notes")) {
+                NavigationLink(destination: BVNotesSettingsView(viewModel: appState.bvNotesViewModel)) {
+                    HStack {
+                        Image(systemName: "cross.case.fill")
                         Text("BV Notes Settings")
                     }
                 }
-                Text("Configure global vaccine lot numbers and milestone templates used by BV Notes.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                
-                // New: Export/Import BV Notes settings bundled with coordinates
-                if let adapter {
-                    Button("Export coordinates + BV Notes settings") {
-                        let json = makeCombinedExportJSON(templates: adapter.templates, bvSettings: bvNotesViewModel.globalSettings)
-                        Clipboard.copy(json)
-                        showingCopiedAlert = true
-                    }
-                    Button("Import coordinates + BV Notes settings") {
-                        showingImport = true
-                    }
-                }
             }
             
-            // Templates management and coordinate transfer live in the same section
+            // Templates management
             Section(header: Text("Templates")) {
-                NavigationLink(destination: TemplateEditorView()) {
+                NavigationLink(destination: TemplateListView().environmentObject(appState)) {
+                    HStack {
+                        Image(systemName: "doc.text.magnifyingglass")
+                        Text("Fill a Template")
+                    }
+                }
+
+                NavigationLink(destination: TemplateEditorView().environmentObject(appState)) {
                     HStack {
                         Image(systemName: "square.and.pencil")
                         Text("Template Editor")
                     }
                 }
-                
+
                 Button(action: {
                     appState.restoreDefaultTemplates()
                 }) {
@@ -102,84 +58,221 @@ struct SettingsView: View {
                         Text("Restore Default Templates")
                     }
                 }
-                
-                // Existing Export coordinates row (templates only)
-                Button("Export coordinates") {
-                    guard let adapter else { return }
-                    let json = makeExportJSON(from: adapter.templates)
-                    Clipboard.copy(json)
-                    showingCopiedAlert = true
-                }
-                
-                // Existing Import coordinates row (templates only or combined; importer handles both)
-                Button("Import coordinates") {
-                    showingImport = true
-                }
             }
             
-            Section(header: Text("About")) {
-                HStack {
-                    Text("Version")
-                    Spacer()
-                    Text(appVersionString())
-                        .foregroundColor(.secondary)
-                        .accessibilityLabel("App Version")
+            // Export/Import All Settings
+            Section(header: Text("Backup & Restore"), footer: Text("Export and import all settings including doctor info, BV Notes settings, and template coordinates.")) {
+                Button {
+                    exportAllSettings()
+                } label: {
+                    HStack {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("Export All Settings")
+                    }
                 }
-                
-                Text("Speedoc Clinical Notes fills PDF forms from image templates. Exports flattened PDFs with specific filenames.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+
+                Button {
+                    showingImport = true
+                } label: {
+                    HStack {
+                        Image(systemName: "square.and.arrow.down")
+                        Text("Import All Settings")
+                    }
+                }
             }
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
-        // Create the adapter once when the view appears
-        .onAppear {
-            if adapter == nil {
-                adapter = AppStateTemplateAdapter(appState: appState)
-            }
+        .alert(alertMessage, isPresented: $showingCopiedAlert) {
+            Button("OK", role: .cancel) { }
         }
-        // Export alert
-        .alert("Copied", isPresented: $showingCopiedAlert) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Export JSON copied to clipboard.")
-        }
-        // Import sheet – uses existing importer which now also saves BV Notes settings if present
         .sheet(isPresented: $showingImport) {
-            if let adapter {
-                ImportCoordinatesSheet<AppStateTemplateAdapter>()
-                    .environmentObject(adapter)
-                    .onDisappear {
-                        // Reload BV settings from disk in case an import updated them
-                        if let loaded = BVNotesViewModel.loadGlobalSettings() {
-                            bvNotesViewModel.globalSettings = loaded
-                        }
-                    }
-            } else {
-                // Fallback: if adapter isn’t ready, show a spinner briefly
-                ProgressView()
-                    .onAppear {
-                        if adapter == nil {
-                            adapter = AppStateTemplateAdapter(appState: appState)
-                        }
-                    }
+            ImportSettingsView { importedData in
+                importAllSettings(importedData)
             }
         }
     }
-    
+
     // MARK: - Helpers
+
+    // Export all settings to JSON
+    private func exportAllSettings() {
+        let exportData = AllSettingsExport(
+            clinician: appState.clinician,
+            bvNotesSettings: appState.bvNotesViewModel.globalSettings,
+            templates: appState.templates
+        )
+        
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        
+        guard let data = try? encoder.encode(exportData),
+              let json = String(data: data, encoding: .utf8) else {
+            alertMessage = "Failed to export settings"
+            showingCopiedAlert = true
+            return
+        }
+        
+        ClipboardHelper.copy(json)
+        alertMessage = "All settings copied to clipboard"
+        showingCopiedAlert = true
+    }
     
-    private func appVersionString() -> String {
-        let marketing = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "—"
-        return "\(marketing) (\(build))"
+    // Import all settings from JSON
+    private func importAllSettings(_ data: AllSettingsExport) {
+        // Import clinician info
+        appState.clinician = data.clinician
+        appState.saveClinician()
+        
+        // Import BV Notes settings
+        appState.bvNotesViewModel.globalSettings = data.bvNotesSettings
+        appState.bvNotesViewModel.saveGlobalSettings()
+        
+        // Re-initialize current milestone with new settings
+        appState.bvNotesViewModel.initializeSelections(for: appState.bvNotesViewModel.currentState.milestone)
+        
+        // Import templates
+        appState.templates = data.templates
+        appState.saveTemplates()
+        
+        alertMessage = "All settings imported successfully"
+        showingCopiedAlert = true
     }
 }
 
-#Preview {
-    NavigationView {
-        SettingsView()
-            .environmentObject(AppState())
+// MARK: - Data Models for Export/Import
+
+struct AllSettingsExport: Codable {
+    let version: Int = 1
+    let exportDate: String = ISO8601DateFormatter().string(from: Date())
+    let clinician: Clinician
+    let bvNotesSettings: GlobalVaccineSettings
+    let templates: [Template]
+}
+
+// MARK: - Clinician Settings View
+
+struct ClinicianSettingsView: View {
+    @EnvironmentObject var appState: AppState
+    @State private var displayName: String = ""
+    @State private var mcrNumber: String = ""
+    
+    var body: some View {
+        Form {
+            Section(header: Text("Doctor Information")) {
+                TextField("Display Name", text: $displayName)
+                    .textContentType(.name)
+                
+                TextField("MCR Number", text: $mcrNumber)
+                    .textContentType(.username)
+            }
+            
+            Section(header: Text("Signature")) {
+                #if os(iOS)
+                if let base64 = appState.clinician.defaultSignatureImagePNGBase64,
+                   let data = Data(base64Encoded: base64),
+                   let uiImage = UIImage(data: data) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 100)
+                }
+                #elseif os(macOS)
+                if let base64 = appState.clinician.defaultSignatureImagePNGBase64,
+                   let data = Data(base64Encoded: base64),
+                   let nsImage = NSImage(data: data) {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 100)
+                }
+                #endif
+                
+                Button("Update Signature") {
+                    // TODO: Add signature capture functionality
+                }
+            }
+        }
+        .navigationTitle("Clinician Settings")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            displayName = appState.clinician.displayName
+            mcrNumber = appState.clinician.mcrNumber
+        }
+        .onChange(of: displayName) { _, newValue in
+            appState.clinician.displayName = newValue
+            appState.saveClinician()
+        }
+        .onChange(of: mcrNumber) { _, newValue in
+            appState.clinician.mcrNumber = newValue
+            appState.saveClinician()
+        }
+    }
+}
+
+// MARK: - Import View
+
+struct ImportSettingsView: View {
+    @Environment(\.dismiss) private var dismiss
+    var onImport: (AllSettingsExport) -> Void
+
+    @State private var text: String = ""
+    @State private var showError = false
+    @State private var errorMessage = ""
+
+    var body: some View {
+        NavigationView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Paste settings JSON below:")
+                    .font(.headline)
+                    .padding(.horizontal)
+                
+                TextEditor(text: $text)
+                    .font(.system(.body, design: .monospaced))
+                    .frame(minHeight: 240)
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.3)))
+                    .padding(.horizontal)
+                
+                if showError {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .font(.caption)
+                        .padding(.horizontal)
+                }
+                
+                Spacer()
+            }
+            .padding(.vertical)
+            .navigationTitle("Import Settings")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Import") {
+                        importSettings()
+                    }
+                }
+            }
+        }
+    }
+
+    private func importSettings() {
+        guard let data = text.data(using: .utf8) else {
+            errorMessage = "Invalid text encoding"
+            showError = true
+            return
+        }
+        
+        let decoder = JSONDecoder()
+        
+        do {
+            let imported = try decoder.decode(AllSettingsExport.self, from: data)
+            onImport(imported)
+            dismiss()
+        } catch {
+            errorMessage = "Failed to parse JSON: \(error.localizedDescription)"
+            showError = true
+        }
     }
 }

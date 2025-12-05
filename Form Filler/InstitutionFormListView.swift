@@ -185,86 +185,178 @@ struct InstitutionFormListView: View {
     
     var body: some View {
         Group {
-            if institution == .activeGlobal {
-                // Keep existing Active Global unified screen (requires ActiveGlobalFormScreen to exist)
-                ActiveGlobalFormScreen(
-                    agVM: agVM,
-                    patientNameMissing: patientNameMissing,
-                    clinicianMissing: clinicianMissing,
-                    allNotesEmpty: allNotesEmpty,
-                    canExport: canExport,
-                    showingPasteParser: $showingPasteParser,
-                    showDestinationPicker: $showDestinationPicker,
-                    onTapMedicalNotes: {
-                        pendingExport = .medicalNotes
-                        agVM.lastExportChoice = .medicalNotes
-                        exportMedicalNotes()
-                    },
-                    onTapHomeVisit: {
-                        pendingExport = .homeVisitRecord
-                        agVM.lastExportChoice = .homeVisitRecord
-                        exportHomeVisitRecord()
-                    }
-                )
-                .environmentObject(appState)
-                .sheet(isPresented: $showingPreview) {
-                    if let data = pdfData {
-                        let filename = exportFilename(for: pendingExport)
-                        PDFPreviewView(pdfData: data, filename: filename, showingExport: $showingExport)
-                    }
-                }
-                .sheet(isPresented: $showingPasteParser) {
-                    PasteParseView()
-                        .environmentObject(appState)
-                        .onDisappear {
-                            applyFromMedicalNotesDraftToUnified()
-                        }
-                }
-                .alert("Error", isPresented: $showingAlert) {
-                    Button("OK", role: .cancel) {}
-                } message: {
-                    Text(alertMessage)
-                }
-                .onAppear {
-                    if agVM.data.clinicianName.isEmpty {
-                        agVM.data.clinicianName = appState.clinician.displayName
-                        agVM.data.clinicianMCR = appState.clinician.mcrNumber
-                        agVM.save()
-                    }
-                    if agVM.data.patientName.isEmpty, let p = appState.lastUsedPatient {
-                        agVM.data.patientName = p.name
-                        agVM.data.nric = p.nric
-                        agVM.save()
-                    }
-                }
+            if institution.institutionType == .activeGlobal {
+                // Active Global unified screen
+                activeGlobalView
+            } else if institution.institutionType == .lentor {
+                // Lentor unified screen
+                lentorView
             } else {
-                // Lentor: present a simple menu to choose between the two Lentor forms.
-                List {
-                    Section(header: Text("Lentor Forms")) {
-                        NavigationLink {
-                            LentorMedicalNotesFormView()
-                                .environmentObject(appState)
-                        } label: {
-                            HStack {
-                                Image(systemName: FormKind.medicalNotes.iconName)
-                                Text("Chronic Medical Review")
-                            }
-                        }
-                        NavigationLink {
-                            LentorHVRecordFormView()
-                                .environmentObject(appState)
-                        } label: {
-                            HStack {
-                                Image(systemName: FormKind.homeVisitRecord.iconName)
-                                Text("Service Attendance Record")
-                            }
-                        }
-                    }
-                }
-                .navigationTitle("Lentor")
-                .navigationBarTitleDisplayMode(.inline)
+                // Custom institution or institution with no type - show empty state
+                emptyStateView
             }
         }
+    }
+    
+    // MARK: - Active Global View
+    
+    private var activeGlobalView: some View {
+        ActiveGlobalFormScreen(
+            agVM: agVM,
+            patientNameMissing: patientNameMissing,
+            clinicianMissing: clinicianMissing,
+            allNotesEmpty: allNotesEmpty,
+            canExport: canExport,
+            showingPasteParser: $showingPasteParser,
+            showDestinationPicker: $showDestinationPicker,
+            onTapMedicalNotes: {
+                pendingExport = .medicalNotes
+                agVM.lastExportChoice = .medicalNotes
+                exportMedicalNotes()
+            },
+            onTapHomeVisit: {
+                pendingExport = .homeVisitRecord
+                agVM.lastExportChoice = .homeVisitRecord
+                exportHomeVisitRecord()
+            }
+        )
+        .environmentObject(appState)
+        .sheet(isPresented: $showingPreview) {
+            if let data = pdfData {
+                let filename = exportFilename(for: pendingExport)
+                PDFPreviewView(pdfData: data, filename: filename, showingExport: $showingExport)
+            }
+        }
+        .sheet(isPresented: $showingPasteParser) {
+            PasteParseView()
+                .environmentObject(appState)
+                .onDisappear {
+                    applyFromMedicalNotesDraftToUnified()
+                }
+        }
+        .alert("Error", isPresented: $showingAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(alertMessage)
+        }
+        .onAppear {
+            if agVM.data.clinicianName.isEmpty {
+                agVM.data.clinicianName = appState.clinician.displayName
+                agVM.data.clinicianMCR = appState.clinician.mcrNumber
+                agVM.save()
+            }
+            if agVM.data.patientName.isEmpty, let p = appState.lastUsedPatient {
+                agVM.data.patientName = p.name
+                agVM.data.nric = p.nric
+                agVM.save()
+            }
+        }
+    }
+    
+    // MARK: - Lentor View
+    
+    @State private var lentorPDFData: Data?
+    @State private var showingLentorPreview = false
+    @State private var showingLentorExport = false
+    
+    private var lentorView: some View {
+        LentorFormScreen(
+            lentorVM: lentorVM,
+            patientNameMissing: lentorPatientMissing,
+            clinicianMissing: lentorClinicianMissing,
+            allNotesEmpty: lentorAllNotesEmpty,
+            canExport: lentorCanExport,
+            showingPasteParser: $showingLentorPasteParser,
+            onTapCMR: {
+                lentorPendingExport = .cmr
+                lentorVM.lastExportChoice = .cmr
+                exportLentorCMR()
+            },
+            onTapServiceAttendance: {
+                lentorPendingExport = .serviceAttendance
+                lentorVM.lastExportChoice = .serviceAttendance
+                exportLentorServiceAttendance()
+            }
+        )
+        .environmentObject(appState)
+        .sheet(isPresented: $showingLentorPreview) {
+            if let data = lentorPDFData {
+                let filename = lentorExportFilename(for: lentorPendingExport)
+                PDFPreviewView(pdfData: data, filename: filename, showingExport: $showingLentorExport)
+            }
+        }
+        .sheet(isPresented: $showingLentorPasteParser) {
+            LentorPasteParseView()
+                .environmentObject(appState)
+                .onDisappear {
+                    applyFromLentorPasteToUnified()
+                }
+        }
+        .alert("Error", isPresented: $showingAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(alertMessage)
+        }
+        .onAppear {
+            if lentorVM.data.clinicianName.isEmpty {
+                lentorVM.data.clinicianName = appState.clinician.displayName
+                lentorVM.data.clinicianMCR = appState.clinician.mcrNumber
+                lentorVM.save()
+            }
+            if lentorVM.data.patientName.isEmpty, let p = appState.lastUsedPatient {
+                lentorVM.data.patientName = p.name
+                lentorVM.data.nric = p.nric
+                lentorVM.save()
+            }
+        }
+    }
+    
+    // MARK: - Empty State View
+    
+    private var emptyStateView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "doc.questionmark")
+                .font(.system(size: 60))
+                .foregroundColor(.gray)
+            
+            Text("No Forms Available")
+                .font(.title2)
+                .fontWeight(.semibold)
+            
+            Text("This institution doesn't have any forms configured yet.")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Add a PDF template background", systemImage: "doc.badge.plus")
+                Label("Configure form fields", systemImage: "slider.horizontal.3")
+            }
+            .font(.callout)
+            .foregroundColor(.secondary)
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(12)
+            
+            NavigationLink {
+                TemplateEditorView()
+                    .environmentObject(appState)
+            } label: {
+                Text("Open Template Editor")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.accentColor)
+                    .cornerRadius(12)
+            }
+            .padding(.horizontal, 40)
+            .padding(.top, 10)
+        }
+        .padding()
+        .navigationTitle(institution.displayName)
+        .navigationBarTitleDisplayMode(.inline)
     }
     
     // MARK: - Helpers (UI)
@@ -562,11 +654,211 @@ struct InstitutionFormListView: View {
         }
     }
     
+    // MARK: - Export (Lentor)
+    
+    private func lentorExportFilename(for choice: LentorFormViewModel.ExportChoice) -> String {
+        let patient = lentorVM.data.patientName.isEmpty ? "Patient" : lentorVM.data.patientName
+        switch choice {
+        case .cmr:
+            if let desc = FormRegistry.shared.descriptor(institution: .lentor, kind: .medicalNotes) {
+                return desc.exportFilenameFormat.replacingOccurrences(of: "{PATIENT_NAME}", with: patient)
+            }
+            return "\(patient) Lentor Notes.pdf"
+        case .serviceAttendance:
+            if let desc = FormRegistry.shared.descriptor(institution: .lentor, kind: .homeVisitRecord) {
+                return desc.exportFilenameFormat.replacingOccurrences(of: "{PATIENT_NAME}", with: patient)
+            }
+            return "\(patient) Lentor HV.pdf"
+        }
+    }
+    
+    private func exportLentorCMR() {
+        let f = DateFormatter()
+        f.dateFormat = "dd/MM/yyyy"
+        let dateString = f.string(from: lentorVM.data.dateOfVisit)
+        
+        // Map unified Lentor data to LentorMedicalNotesData
+        let lmd = LentorMedicalNotesData(
+            patientName: lentorVM.data.patientName,
+            nric: lentorVM.data.nric,
+            dateOfVisit: dateString,
+            nokName: "",
+            nokContact: "",
+            temp: lentorVM.data.temp,
+            rr: lentorVM.data.rr,
+            bp: lentorVM.data.bp,
+            spo2: lentorVM.data.spo2,
+            pr: lentorVM.data.pr,
+            hc: "",
+            weightMostRecent: "",
+            weightLeastRecent: "",
+            gcIssue1: "",
+            gcIssue2: "",
+            gcIssue3: "",
+            gcIssue4: "",
+            gcIssue5: "",
+            gcIssue6: "",
+            gcIssue7: "",
+            physicalExam: lentorVM.data.physicalExam,
+            tcuPlan6m: "",
+            docLabReportsChecked: false,
+            docLabTrendChartFill: false,
+            docLabTrendChartPresent: false,
+            docMedRecRecon: false,
+            docOthersText: "",
+            planMedChanges: "",
+            planLabTests: "",
+            planSpecialMonitoring: "",
+            planFollowUpReview: "",
+            planReferralsMemos: "",
+            planACP: "",
+            planOthersUpdateNOK: lentorVM.data.plan,
+            doctorName: lentorVM.data.clinicianName,
+            doctorMCR: lentorVM.data.clinicianMCR,
+            doctorESign: ""
+        )
+        
+        let patient = Patient(name: lmd.patientName, nric: lmd.nric, dateOfBirth: nil)
+        appState.saveLastPatient(patient)
+        
+        let templates = appState.templates
+            .filter { $0.backgroundImageName.contains("Lentor_MedicalNotes") }
+            .sorted { $0.pageIndex < $1.pageIndex }
+        
+        guard !templates.isEmpty else {
+            alertMessage = "Lentor CMR templates not found. Please check Settings."
+            showingAlert = true
+            return
+        }
+        
+        let pages: [RenderedPage] = templates.compactMap { template in
+            guard let image = PlatformImage.load(named: template.backgroundImageName) else { return nil }
+            let instructions = template.fields.map { field -> DrawInstruction in
+                let text = lmd.value(for: field.key)
+                return DrawInstruction(
+                    text: text,
+                    frame: field.frame.cgRect,
+                    fontSize: field.fontSize,
+                    alignment: field.alignment,
+                    isMultiline: field.kind == .multiline
+                )
+            }
+            return RenderedPage(backgroundImage: image, instructions: instructions)
+        }
+        
+        guard !pages.isEmpty else {
+            alertMessage = "Could not load Lentor CMR form images."
+            showingAlert = true
+            return
+        }
+        
+        let renderer = PDFRenderer()
+        do {
+            lentorPDFData = try renderer.render(pages: pages)
+            showingLentorPreview = true
+        } catch {
+            alertMessage = "Failed to generate PDF: \(error.localizedDescription)"
+            showingAlert = true
+        }
+    }
+    
+    private func exportLentorServiceAttendance() {
+        let f = DateFormatter()
+        f.dateFormat = "dd/MM/yyyy"
+        let dateString = f.string(from: lentorVM.data.dateOfVisit)
+        
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "HH:mm"
+        
+        // Create a single row from current visit data
+        let currentRow = LentorAttendanceRow(
+            date: dateString,
+            timeStart: "",
+            timeEnd: "",
+            totalHours: lentorVM.data.durationMins.isEmpty ? "" : String(format: "%.1f", (Double(lentorVM.data.durationMins) ?? 0) / 60.0),
+            typeOfServices: lentorVM.data.interventions,
+            caregiverSignature: "",
+            hcStaffSignature: lentorVM.data.clinicianName
+        )
+        
+        let hvData = LentorHVRecordData(
+            clientName: lentorVM.data.patientName,
+            clientNRIC: lentorVM.data.nric,
+            serviceLocation: lentorVM.data.locationWard,
+            serviceContact: "",
+            caregiverName: "",
+            caregiverNRIC: "",
+            caregiverAddress: "",
+            caregiverContact: "",
+            rows: [currentRow]
+        )
+        
+        let patient = Patient(name: hvData.clientName, nric: hvData.clientNRIC, dateOfBirth: nil)
+        appState.saveLastPatient(patient)
+        
+        guard let template = appState.templates.first(where: { $0.backgroundImageName.contains("Lentor_HVRecord") }) else {
+            alertMessage = "Lentor Service Attendance template not found. Please check Settings."
+            showingAlert = true
+            return
+        }
+        
+        guard let image = PlatformImage.load(named: template.backgroundImageName) else {
+            alertMessage = "Could not load Lentor Service Attendance image."
+            showingAlert = true
+            return
+        }
+        
+        var instructions: [DrawInstruction] = []
+        
+        // Header fields
+        let headerFields = template.fields.filter { !$0.key.hasPrefix("lentorRow.") }
+        for field in headerFields {
+            let text = hvData.value(for: field.key)
+            instructions.append(DrawInstruction(
+                text: text,
+                frame: field.frame.cgRect,
+                fontSize: field.fontSize,
+                alignment: field.alignment,
+                isMultiline: field.kind == .multiline
+            ))
+        }
+        
+        // Row fields
+        let rowFields = template.fields.filter { $0.key.hasPrefix("lentorRow.") }
+        let rowHeight: CGFloat = 50
+        
+        for (rowIndex, row) in hvData.rows.enumerated() {
+            let yOffset = CGFloat(rowIndex) * rowHeight
+            for field in rowFields {
+                let text = row.value(for: field.key)
+                var adjustedFrame = field.frame.cgRect
+                adjustedFrame.origin.y += yOffset
+                instructions.append(DrawInstruction(
+                    text: text,
+                    frame: adjustedFrame,
+                    fontSize: field.fontSize,
+                    alignment: field.alignment,
+                    isMultiline: false
+                ))
+            }
+        }
+        
+        let page = RenderedPage(backgroundImage: image, instructions: instructions)
+        let renderer = PDFRenderer()
+        do {
+            lentorPDFData = try renderer.render(pages: [page])
+            showingLentorPreview = true
+        } catch {
+            alertMessage = "Failed to generate PDF: \(error.localizedDescription)"
+            showingAlert = true
+        }
+    }
+    
     // MARK: - Destination View (legacy; not used)
     
     @ViewBuilder
     private func destinationView(for form: FormDescriptor) -> some View {
-        switch (form.institution, form.kind) {
+        switch (form.institutionType, form.kind) {
             case (.activeGlobal, .medicalNotes):
                 MedicalNotesFormView()
             case (.activeGlobal, .homeVisitRecord):

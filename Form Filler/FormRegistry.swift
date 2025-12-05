@@ -27,7 +27,7 @@ enum FormKind: String, CaseIterable, Codable {
 
 struct FormDescriptor: Identifiable, Codable, Equatable {
     let id: UUID
-    let institution: Institution
+    let institutionType: InstitutionType
     let kind: FormKind
     let title: String
     let pageCount: Int
@@ -35,14 +35,14 @@ struct FormDescriptor: Identifiable, Codable, Equatable {
     
     init(
         id: UUID = UUID(),
-        institution: Institution,
+        institutionType: InstitutionType,
         kind: FormKind,
         title: String,
         pageCount: Int,
         exportFilenameFormat: String
     ) {
         self.id = id
-        self.institution = institution
+        self.institutionType = institutionType
         self.kind = kind
         self.title = title
         self.pageCount = pageCount
@@ -62,7 +62,7 @@ final class FormRegistry {
         // Active Global
         list.append(
             FormDescriptor(
-                institution: .activeGlobal,
+                institutionType: .activeGlobal,
                 kind: .medicalNotes,
                 title: "Medical Notes",
                 pageCount: 2,
@@ -71,7 +71,7 @@ final class FormRegistry {
         )
         list.append(
             FormDescriptor(
-                institution: .activeGlobal,
+                institutionType: .activeGlobal,
                 kind: .homeVisitRecord,
                 title: "Home Visit Record",
                 pageCount: 1,
@@ -82,7 +82,7 @@ final class FormRegistry {
         // Lentor
         list.append(
             FormDescriptor(
-                institution: .lentor,
+                institutionType: .lentor,
                 kind: .medicalNotes,
                 title: "Chronic Medical Review",
                 pageCount: 3,
@@ -91,7 +91,7 @@ final class FormRegistry {
         )
         list.append(
             FormDescriptor(
-                institution: .lentor,
+                institutionType: .lentor,
                 kind: .homeVisitRecord,
                 title: "Service Attendance Record",
                 pageCount: 1,
@@ -103,10 +103,12 @@ final class FormRegistry {
     }()
     
     func forms(for institution: Institution) -> [FormDescriptor] {
-        allForms.filter { $0.institution == institution }
+        guard let type = institution.institutionType else { return [] }
+        return allForms.filter { $0.institutionType == type }
     }
     
     func descriptor(institution: Institution, kind: FormKind) -> FormDescriptor? {
-        allForms.first { $0.institution == institution && $0.kind == kind }
+        guard let type = institution.institutionType else { return nil }
+        return allForms.first { $0.institutionType == type && $0.kind == kind }
     }
 }

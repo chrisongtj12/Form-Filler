@@ -16,24 +16,24 @@ extension HomeView {
             HStack(spacing: 14) {
                 Image(systemName: "cross.case.fill")
                     .imageScale(.large)
-                    .foregroundColor(.white)
+                    .foregroundColor(.blue)
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("BV Notes")
                         .font(.title3)
                         .fontWeight(.semibold)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     
                     Text("Baby Vaccination Notes")
                         .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.9))
+                        .foregroundColor(.secondary)
                 }
                 
                 Spacer()
                 
                 Image(systemName: "chevron.right")
                     .font(.headline)
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(.secondary)
             }
             .padding(.horizontal, 16)
             .frame(maxWidth: .infinity, minHeight: 68)
@@ -49,24 +49,24 @@ struct BVNotesButtonStyle: ButtonStyle {
         configuration.label
             .background(
                 ZStack {
-                    // Change BV Notes to BLUE gradient
-                    LinearGradient(
-                        colors: [Color.blue, Color.blue.opacity(0.85)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+                    // Simple background that adapts to light/dark mode
+                    #if os(iOS)
+                    Color(uiColor: .systemGray6)
+                    #else
+                    Color(nsColor: .systemGray)
+                    #endif
                     
                     if configuration.isPressed {
-                        Color.black.opacity(0.1)
+                        Color.black.opacity(0.05)
                     }
                 }
             )
             .cornerRadius(12)
             .shadow(
-                color: .black.opacity(configuration.isPressed ? 0.05 : 0.15),
-                radius: configuration.isPressed ? 3 : 8,
+                color: .black.opacity(configuration.isPressed ? 0.05 : 0.1),
+                radius: configuration.isPressed ? 2 : 4,
                 x: 0,
-                y: configuration.isPressed ? 1 : 4
+                y: configuration.isPressed ? 1 : 2
             )
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)

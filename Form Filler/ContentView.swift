@@ -1,5 +1,5 @@
 //
-//  HomeView.swift
+//  ContentView.swift
 //  Speedoc Clinical Notes
 //
 //  Main home screen with navigation to forms and settings
@@ -7,235 +7,158 @@
 
 import SwiftUI
 
+// MARK: - HomeView
+
 struct HomeView: View {
     @EnvironmentObject var appState: AppState
-    @State private var showingClinicianSetup = false
-    
+
     var body: some View {
         NavigationView {
-            ZStack {
-                // Solid adaptive background (no texture)
-                Color(.systemGroupedBackground)
-                    .ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 30) {
-                        // Header
-                        VStack(spacing: 8) {
-                            Image(systemName: "doc.text.fill")
-                                .font(.system(size: 60))
-                                .foregroundColor(.blue)
-                            
-                            Text("Clinical Notes")
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
-                            
-                            Text("PDF Form Filler")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.top, 40)
-                        
-                        // BV Notes (Baby Vaccination) Section
-                        VStack(spacing: 16) {
-                            Text("Clinical Notes Tools")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                            
-                            // BV Notes card (blue gradient style defined in BVNotesButtonStyle)
-                            bvNotesCard
-                        }
-                        .padding(.horizontal, 20)
-                        
-                        // Institution Buttons (override to GREEN)
-                        VStack(spacing: 16) {
-                            Text("Select Institution")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                            
-                            // Active Global (green)
-                            NavigationLink {
-                                InstitutionFormListView(institution: .activeGlobal)
-                            } label: {
-                                HStack(spacing: 14) {
-                                    Image(systemName: Institution.activeGlobal.iconName)
-                                        .imageScale(.large)
-                                        .foregroundColor(.white)
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(Institution.activeGlobal.displayName)
-                                            .foregroundColor(.white)
-                                        Text(Institution.activeGlobal.subtitle)
-                                            .font(.subheadline)
-                                            .foregroundColor(.white.opacity(0.9))
-                                    }
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .font(.headline)
-                                        .foregroundColor(.white.opacity(0.8))
-                                }
-                                .padding(.horizontal, 16)
-                                .frame(maxWidth: .infinity, minHeight: 68)
-                                .background(
-                                    LinearGradient(
-                                        colors: [Color.green, Color.green.opacity(0.85)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .cornerRadius(12)
-                                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
-                            }
-                            
-                            // Lentor (green)
-                            NavigationLink {
-                                InstitutionFormListView(institution: .lentor)
-                            } label: {
-                                HStack(spacing: 14) {
-                                    Image(systemName: Institution.lentor.iconName)
-                                        .imageScale(.large)
-                                        .foregroundColor(.white)
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(Institution.lentor.displayName)
-                                            .foregroundColor(.white)
-                                        Text(Institution.lentor.subtitle)
-                                            .font(.subheadline)
-                                            .foregroundColor(.white.opacity(0.9))
-                                    }
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .font(.headline)
-                                        .foregroundColor(.white.opacity(0.8))
-                                }
-                                .padding(.horizontal, 16)
-                                .frame(maxWidth: .infinity, minHeight: 68)
-                                .background(
-                                    LinearGradient(
-                                        colors: [Color.green, Color.green.opacity(0.85)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .cornerRadius(12)
-                                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                        
-                        Spacer(minLength: 40)
-                        
-                        // Settings Link
-                        NavigationLink(destination: SettingsView()) {
-                            HStack {
-                                Image(systemName: "gear")
-                                Text("Settings")
-                            }
-                            .foregroundColor(.blue)
-                        }
-                        .padding(.bottom, 30)
-                    }
-                }
-            }
-            .navigationTitle("")
-            .navigationBarHidden(true)
-            .onAppear {
-                checkClinicianSetup()
-            }
-            .sheet(isPresented: $showingClinicianSetup) {
-                ClinicianSetupView(isPresented: $showingClinicianSetup)
-            }
-        }
-        #if os(iOS)
-        .navigationViewStyle(StackNavigationViewStyle())
-        #endif
-    }
-    
-    private func checkClinicianSetup() {
-        if appState.clinician.displayName.isEmpty {
-            showingClinicianSetup = true
-        }
-    }
-}
+            List {
+                // Templates section removed -- now lives in SettingsView
 
-// MARK: - Institution Card (unchanged; no longer used on Home, but keep for other screens)
-
-struct InstitutionCard: View {
-    let institution: Institution
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: institution.iconName)
-                    .font(.title)
-                    .foregroundColor(.white)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(institution.displayName)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                    
-                    Text(institution.subtitle)
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.9))
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .foregroundColor(.white.opacity(0.7))
-            }
-            .padding()
-        }
-        .frame(maxWidth: .infinity)
-        .background(LinearGradient(
-            colors: [Color.blue, Color.blue.opacity(0.8)],
-            startPoint: .topLeading, endPoint: .bottomTrailing)
-        )
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
-    }
-}
-
-// MARK: - Clinician Setup Sheet (unchanged)
-
-struct ClinicianSetupView: View {
-    @EnvironmentObject var appState: AppState
-    @Binding var isPresented: Bool
-    
-    @State private var name = ""
-    @State private var mcr = ""
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("Welcome! Set up your profile")) {
-                    TextField("Your Name", text: $name)
-                    TextField("MCR Number", text: $mcr)
-                }
-                
                 Section {
-                    Button("Save") {
-                        appState.clinician.displayName = name
-                        appState.clinician.mcrNumber = mcr
-                        appState.saveClinician()
-                        isPresented = false
+                    bvNotesCard
+                }
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                .listRowBackground(Color.clear)
+                
+                Section(header: Text("Institutions")) {
+                    ForEach(appState.institutions) { institution in
+                        NavigationLink {
+                            InstitutionFormListView(institution: institution)
+                                .environmentObject(appState)
+                        } label: {
+                            HStack {
+                                Image(systemName: institution.iconName)
+                                Text(institution.displayName)
+                                Spacer()
+                                Text(institution.subtitle)
+                                    .foregroundColor(.secondary)
+                                    .font(.caption)
+                            }
+                        }
                     }
-                    .disabled(name.isEmpty || mcr.isEmpty)
+                    
+                    NavigationLink {
+                        InstitutionManagerView()
+                            .environmentObject(appState)
+                    } label: {
+                        Label("Manage Institutions", systemImage: "building.2.crop.circle")
+                            .foregroundColor(.accentColor)
+                    }
+                }
+
+                // Tools now only keeps the editor link above; you can add more tools here later.
+
+                // Settings
+                Section(header: Text("Settings")) {
+                    NavigationLink {
+                        SettingsView()
+                            .environmentObject(appState)
+                    } label: {
+                        Label("Settings", systemImage: "gearshape")
+                    }
                 }
             }
-            .navigationTitle("Clinician Setup")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Form Filler")
         }
-        .interactiveDismissDisabled(appState.clinician.displayName.isEmpty)
     }
 }
 
-// Keep ContentView for compatibility
+// MARK: - Template List View
+
+struct TemplateListView: View {
+    @EnvironmentObject var appState: AppState
+    @State private var selectedTemplate: Template?
+
+    var body: some View {
+        List {
+            ForEach(appState.templates) { template in
+                NavigationLink {
+                    // Placeholder filler; replace with your generic form filler when ready
+                    TemplateActionsView(template: template)
+                        .environmentObject(appState)
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(template.name)
+                        Text("Page \(template.pageIndex) • \(template.fields.count) fields")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+        }
+        .navigationTitle("Templates")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Template Actions View
+
+struct TemplateActionsView: View {
+    @EnvironmentObject var appState: AppState
+    let template: Template
+
+    var body: some View {
+        Form {
+            Section(header: Text("Selected Template")) {
+                Text(template.name)
+                Text("Page \(template.pageIndex)")
+                Text("\(template.fields.count) fields")
+            }
+            Section {
+                // Hook for your generic filler – swap this out when you implement it
+                Button {
+                    // TODO: navigate to your generic form filler view that uses `template`
+                } label: {
+                    Label("Fill this Template", systemImage: "doc.text")
+                }
+
+                NavigationLink {
+                    // Open the editor and pre-select this template by index
+                    EditorWrapperView(preselectTemplateID: template.id)
+                        .environmentObject(appState)
+                } label: {
+                    Label("Edit this Template", systemImage: "square.and.pencil")
+                }
+            }
+        }
+        .navigationTitle("Template")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// Helper to preselect the template in the editor
+struct EditorWrapperView: View {
+    @EnvironmentObject var appState: AppState
+    let preselectTemplateID: UUID
+
+    @State private var selectedIndex: Int = 0
+
+    var body: some View {
+        TemplateEditorView()
+            .environmentObject(appState)
+            .onAppear {
+                if let idx = appState.templates.firstIndex(where: { $0.id == preselectTemplateID }) {
+                    // Persist selection by reordering or by exposing selection binding in the editor.
+                    // Since TemplateEditorView manages its own index, simplest is to reorder templates
+                    // temporarily so the target appears first. Alternatively, expose selection via init.
+                    selectedIndex = idx
+                }
+            }
+    }
+}
+
+// MARK: - ContentView (wrapper)
+
 struct ContentView: View {
     var body: some View {
         HomeView()
     }
 }
+
+// MARK: - Previews
 
 #Preview("Home – Light") {
     let previewState = AppState()
@@ -261,4 +184,56 @@ struct ContentView: View {
     previewState.clinician.mcrNumber = "M12345Z"
     return ContentView()
         .environmentObject(previewState)
+}
+
+// MARK: - Additional Previews
+
+#Preview("SettingsView") {
+    let previewState = AppState()
+    previewState.clinician.displayName = "Preview Doctor"
+    previewState.clinician.mcrNumber = "M12345Z"
+    return NavigationView {
+        SettingsView()
+            .environmentObject(previewState)
+    }
+}
+
+#Preview("InstitutionFormListView (Active Global)") {
+    let previewState = AppState()
+    previewState.clinician.displayName = "Preview Doctor"
+    previewState.clinician.mcrNumber = "M12345Z"
+    return NavigationView {
+        InstitutionFormListView(institution: .activeGlobal)
+            .environmentObject(previewState)
+    }
+}
+
+#Preview("InstitutionFormListView (Lentor)") {
+    let previewState = AppState()
+    previewState.clinician.displayName = "Preview Doctor"
+    previewState.clinician.mcrNumber = "M12345Z"
+    return NavigationView {
+        InstitutionFormListView(institution: .lentor)
+            .environmentObject(previewState)
+    }
+}
+
+#Preview("TemplateEditorView") {
+    let previewState = AppState()
+    previewState.clinician.displayName = "Preview Doctor"
+    previewState.clinician.mcrNumber = "M12345Z"
+    return NavigationView {
+        TemplateEditorView()
+            .environmentObject(previewState)
+    }
+}
+
+#Preview("MedicalNotesFormView") {
+    let previewState = AppState()
+    previewState.clinician.displayName = "Preview Doctor"
+    previewState.clinician.mcrNumber = "M12345Z"
+    return NavigationView {
+        MedicalNotesFormView()
+            .environmentObject(previewState)
+    }
 }

@@ -94,6 +94,14 @@ enum Vaccine: String, CaseIterable, Codable, Identifiable {
         }
     }
     
+    var shortName: String {
+        return displayName
+    }
+    
+    var fullName: String {
+        return displayName
+    }
+    
     /// Key for storing lot numbers
     var lotNumberKey: String {
         switch self {
@@ -158,14 +166,18 @@ enum PaymentMode: String, Codable, CaseIterable, Identifiable {
 
 struct BVState: Codable {
     var milestone: Milestone
+    var patientName: String
+    var patientNRIC: String
     var dateOfVisit: Date
     var selections: [VaccineSelection]
     var cds: CDS
     var additionalNotes: String
     var paymentMode: PaymentMode?
     
-    init(milestone: Milestone = .m12, dateOfVisit: Date = Date(), selections: [VaccineSelection] = [], cds: CDS = .yes, additionalNotes: String = "", paymentMode: PaymentMode? = nil) {
+    init(milestone: Milestone = .m12, patientName: String = "", patientNRIC: String = "", dateOfVisit: Date = Date(), selections: [VaccineSelection] = [], cds: CDS = .yes, additionalNotes: String = "", paymentMode: PaymentMode? = nil) {
         self.milestone = milestone
+        self.patientName = patientName
+        self.patientNRIC = patientNRIC
         self.dateOfVisit = dateOfVisit
         self.selections = selections
         self.cds = cds

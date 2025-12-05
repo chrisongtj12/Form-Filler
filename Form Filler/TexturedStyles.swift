@@ -62,8 +62,8 @@ struct TexturedButtonStyle: ButtonStyle {
         case activeGlobal
         case lentor
         
-        init(institution: Institution) {
-            switch institution {
+        init(institutionType: InstitutionType) {
+            switch institutionType {
             case .activeGlobal: self = .activeGlobal
             case .lentor: self = .lentor
             }
@@ -93,9 +93,14 @@ struct TexturedButtonStyle: ButtonStyle {
     
     private let palette: Palette
     
-    // Distinct label to avoid ambiguity when passing Institution.
+    // Accept Institution and extract its type.
     init(institution: Institution) {
-        self.palette = Palette(institution: institution)
+        if let type = institution.institutionType {
+            self.palette = Palette(institutionType: type)
+        } else {
+            // Fallback to a default if institutionType is nil
+            self.palette = .activeGlobal
+        }
     }
     
     // Also allow explicit palette if ever needed.

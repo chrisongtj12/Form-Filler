@@ -10,29 +10,55 @@ import Foundation
 
 // MARK: - Institution
 
-enum Institution: String, CaseIterable, Codable {
+struct Institution: Identifiable, Codable, Equatable {
+    let id: UUID
+    var displayName: String
+    var subtitle: String
+    var iconName: String
+    var institutionType: InstitutionType?
+    
+    init(
+        id: UUID = UUID(),
+        displayName: String,
+        subtitle: String,
+        iconName: String = "building.2.fill",
+        institutionType: InstitutionType? = nil
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.subtitle = subtitle
+        self.iconName = iconName
+        self.institutionType = institutionType
+    }
+    
+    // MARK: - Predefined Institutions
+    
+    static let activeGlobal = Institution(
+        displayName: "Active Global",
+        subtitle: "Medical Notes, HV Record",
+        iconName: "building.2.fill",
+        institutionType: .activeGlobal
+    )
+    
+    static let lentor = Institution(
+        displayName: "Lentor",
+        subtitle: "Medical Notes, HV Record",
+        iconName: "building.fill",
+        institutionType: .lentor
+    )
+    
+    // MARK: - Default List
+    
+    static var defaultInstitutions: [Institution] {
+        [.activeGlobal, .lentor]
+    }
+}
+
+// MARK: - Institution Type
+
+enum InstitutionType: String, Codable {
     case activeGlobal = "Active Global"
     case lentor = "Lentor"
-    
-    var displayName: String { rawValue }
-    
-    var subtitle: String {
-        switch self {
-        case .activeGlobal:
-            return "Medical Notes, HV Record"
-        case .lentor:
-            return "Medical Notes, HV Record"
-        }
-    }
-    
-    var iconName: String {
-        switch self {
-        case .activeGlobal:
-            return "building.2.fill"
-        case .lentor:
-            return "building.fill"
-        }
-    }
 }
 
 // rest unchanged…

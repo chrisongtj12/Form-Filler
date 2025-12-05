@@ -8,6 +8,7 @@
 //  - You have models Template, TemplateField, FieldKind, CGRectCodable, and a store (TemplatePersisting)
 //
 
+import Foundation
 import SwiftUI
 import Combine
 
@@ -53,10 +54,29 @@ enum AlignmentDTO: String, Codable {
 
 // MARK: - New Combined Package (Templates + BV Notes Settings)
 
+// Forward declaration helper - GlobalVaccineSettings is defined in BVNotesModels.swift
+// This struct must match the definition in BVNotesModels.swift
+struct BVSettingsWrapper: Codable {
+    var lotNumbers: [String: String]
+    var milestoneTemplates: [String: MilestoneTemplateWrapper]
+}
+
+struct MilestoneTemplateWrapper: Codable {
+    var defaultSelections: [String: Bool]
+    var defaultDosages: [String: String]
+    var followUpPlan: String
+}
+
 struct CombinedExportPackage: Codable {
     var version: Int
     var templates: [ExportTemplate]
-    var bvNotesSettings: GlobalVaccineSettings?
+    var bvNotesSettings: BVSettingsWrapper?
+    
+    enum CodingKeys: String, CodingKey {
+        case version
+        case templates
+        case bvNotesSettings
+    }
 }
 
 // MARK: - Pure Functions (legacy templates-only)
@@ -137,7 +157,7 @@ func applyImportJSON(_ json: String, to templates: inout [Template]) -> ImportRe
 
 // MARK: - New Combined helpers
 
-func makeCombinedExportJSON(templates: [Template], bvSettings: GlobalVaccineSettings?) -> String {
+func makeCombinedExportJSON(templates: [Template], bvSettings: BVSettingsWrapper?) -> String {
     let payload = CombinedExportPackage(
         version: 2,
         templates: templates.map { t in
@@ -212,7 +232,7 @@ private func bvSettingsURL() -> URL {
         .appendingPathComponent("bv_settings.json")
 }
 
-private func saveBVNotesSettings(_ settings: GlobalVaccineSettings) throws {
+private func saveBVNotesSettings(_ settings: BVSettingsWrapper) throws {
     let url = bvSettingsURL()
     let data = try JSONEncoder().encode(settings)
     try data.write(to: url, options: .atomic)
@@ -437,3 +457,4 @@ struct SettingsCoordinateTransfer_Previews: PreviewProvider {
     }
 }
 #endif
+

@@ -28,6 +28,10 @@ class AppState: ObservableObject {
     @Published var clinician: Clinician
     @Published var lastUsedPatient: Patient?
     @Published var templates: [Template] = []
+    @Published var institutions: [Institution] = []
+    
+    // BV Notes view model
+    let bvNotesViewModel = BVNotesViewModel()
     
     // Active Global draft states
     @Published var medicalNotesDraft: MedicalNotesData
@@ -39,6 +43,7 @@ class AppState: ObservableObject {
     
     private let clinicianKey = "clinician"
     private let lastPatientKey = "lastPatient"
+    private let institutionsKey = "institutions"
     private let medicalNotesDraftKey = "medicalNotesDraft"
     private let hvRecordDraftKey = "hvRecordDraft"
     private let lentorMedicalNotesDraftKey = "lentorMedicalNotesDraft"
@@ -51,6 +56,14 @@ class AppState: ObservableObject {
             self.clinician = clinician
         } else {
             self.clinician = Clinician(displayName: "", mcrNumber: "", defaultSignatureImagePNGBase64: nil)
+        }
+        
+        // Load institutions
+        if let data = UserDefaults.standard.data(forKey: institutionsKey),
+           let institutions = try? JSONDecoder().decode([Institution].self, from: data) {
+            self.institutions = institutions
+        } else {
+            self.institutions = Institution.defaultInstitutions
         }
         
         // Load last patient
@@ -102,6 +115,12 @@ class AppState: ObservableObject {
     func saveClinician() {
         if let data = try? JSONEncoder().encode(clinician) {
             UserDefaults.standard.set(data, forKey: clinicianKey)
+        }
+    }
+    
+    func saveInstitutions() {
+        if let data = try? JSONEncoder().encode(institutions) {
+            UserDefaults.standard.set(data, forKey: institutionsKey)
         }
     }
     
