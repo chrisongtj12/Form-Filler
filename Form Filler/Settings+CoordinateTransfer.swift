@@ -17,7 +17,7 @@ protocol TemplatePersisting: ObservableObject {
     func save()
 }
 
-// MARK: - Export/Import JSON Schema
+// MARK: - Export/Import JSON Schema (Templates-only, legacy)
 
 struct ExportPackage: Codable {
     var version: Int
@@ -51,7 +51,15 @@ enum AlignmentDTO: String, Codable {
     case right
 }
 
-// MARK: - Pure Functions
+// MARK: - New Combined Package (Templates + BV Notes Settings)
+
+struct CombinedExportPackage: Codable {
+    var version: Int
+    var templates: [ExportTemplate]
+    var bvNotesSettings: GlobalVaccineSettings?
+}
+
+// MARK: - Pure Functions (legacy templates-only)
 
 func makeExportJSON(from templates: [Template]) -> String {
     let payload = ExportPackage(
@@ -94,21 +102,76 @@ func applyImportJSON(_ json: String, to templates: inout [Template]) -> ImportRe
     }
     let decoder = JSONDecoder()
     decoder.keyDecodingStrategy = .useDefaultKeys
-    let package: ExportPackage
-    do {
-        package = try decoder.decode(ExportPackage.self, from: data)
-    } catch {
-        result.warnings.append("JSON decoding failed: \(error.localizedDescription)")
+    // Try combined first, fall back to legacy
+    if let combined = try? decoder.decode(CombinedExportPackage.self, from: data) {
+        // Apply templates
+        let templateResult = applyTemplates(from: combined.templates, to: &templates)
+        result.updatedCount += templateResult.updatedCount
+        result.skippedCount += templateResult.skippedCount
+        result.warnings.append(contentsOf: templateResult.warnings)
+        // Apply BV Notes settings if present
+        if let settings = combined.bvNotesSettings {
+            do {
+                try saveBVNotesSettings(settings)
+            } catch {
+                result.warnings.append("Failed to save BV Notes settings: \(error.localizedDescription)")
+            }
+        }
         return result
     }
-    if package.version != 1 {
-        result.warnings.append("Unsupported version \(package.version). Attempting best-effort import.")
+    // Legacy path (templates only)
+    do {
+        let package = try decoder.decode(ExportPackage.self, from: data)
+        if package.version != 1 {
+            result.warnings.append("Unsupported version \(package.version). Attempting best-effort import.")
+        }
+        let templateResult = applyTemplates(from: package.templates, to: &templates)
+        result.updatedCount += templateResult.updatedCount
+        result.skippedCount += templateResult.skippedCount
+        result.warnings.append(contentsOf: templateResult.warnings)
+    } catch {
+        result.warnings.append("JSON decoding failed: \(error.localizedDescription)")
     }
+    return result
+}
+
+// MARK: - New Combined helpers
+
+func makeCombinedExportJSON(templates: [Template], bvSettings: GlobalVaccineSettings?) -> String {
+    let payload = CombinedExportPackage(
+        version: 2,
+        templates: templates.map { t in
+            ExportTemplate(
+                name: t.name,
+                fields: t.fields.map { f in
+                    ExportField(
+                        key: f.key,
+                        frame: RectDTO(x: f.frame.x, y: f.frame.y, w: f.frame.width, h: f.frame.height),
+                        fontSize: f.fontSize,
+                        alignment: AlignmentDTO(from: f.alignment)
+                    )
+                }
+            )
+        },
+        bvNotesSettings: bvSettings
+    )
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+    do {
+        let data = try encoder.encode(payload)
+        return String(data: data, encoding: .utf8) ?? "{}"
+    } catch {
+        return "{}"
+    }
+}
+
+private func applyTemplates(from exportTemplates: [ExportTemplate], to templates: inout [Template]) -> ImportResult {
+    var result = ImportResult(updatedCount: 0, skippedCount: 0, warnings: [])
     var templateIndexByName: [String: Int] = [:]
     for (idx, t) in templates.enumerated() {
         templateIndexByName[t.name] = idx
     }
-    for expTemplate in package.templates {
+    for expTemplate in exportTemplates {
         guard let tIndex = templateIndexByName[expTemplate.name] else {
             result.skippedCount += 1
             result.warnings.append("Template not found: \(expTemplate.name)")
@@ -140,6 +203,19 @@ func applyImportJSON(_ json: String, to templates: inout [Template]) -> ImportRe
         }
     }
     return result
+}
+
+// MARK: - BV Notes settings persistence helpers
+
+private func bvSettingsURL() -> URL {
+    FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("bv_settings.json")
+}
+
+private func saveBVNotesSettings(_ settings: GlobalVaccineSettings) throws {
+    let url = bvSettingsURL()
+    let data = try JSONEncoder().encode(settings)
+    try data.write(to: url, options: .atomic)
 }
 
 // MARK: - Alignment helpers
@@ -184,7 +260,7 @@ func prettyJSON(_ string: String) -> String {
     }
 }
 
-// MARK: - Import Sheet UI
+// MARK: - Import Sheet UI (templates-only; unchanged)
 
 struct ImportCoordinatesSheet<Store: TemplatePersisting>: View {
     @Environment(\.dismiss) private var dismiss
@@ -261,7 +337,7 @@ struct ImportCoordinatesSheet<Store: TemplatePersisting>: View {
         defer { isApplying = false }
         
         var working = store.templates
-        let result = applyImportJSON(text, to: &working)
+        let result = applyImportJSON(text, to: &working) // This now also saves BV settings if present
         
         if result.updatedCount == 0 && result.warnings.isEmpty {
             errorMessage = "No updates applied. Check JSON format and names."
@@ -361,4 +437,3 @@ struct SettingsCoordinateTransfer_Previews: PreviewProvider {
     }
 }
 #endif
-

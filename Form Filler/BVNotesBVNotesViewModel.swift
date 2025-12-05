@@ -50,14 +50,21 @@ class BVNotesViewModel: ObservableObject {
             currentState = savedState
         } else {
             currentState = BVState(milestone: milestone)
-            initializeSelections(for: milestone)
         }
+        
+        // Always reset to defaults when a new milestone is selected
+        initializeSelections(for: milestone)
+        currentState.dateOfVisit = Date()
+        currentState.cds = .yes
+        currentState.additionalNotes = currentState.additionalNotes // keep template-applied notes if any
+        currentState.paymentMode = nil
         
         // Update last used milestone
         UserDefaults.standard.set(milestone.rawValue, forKey: "bv_last_milestone")
         
-        // Validate new state
+        // Validate and persist
         validate()
+        saveCurrentState()
     }
     
     func initializeSelections(for milestone: Milestone) {
@@ -78,8 +85,10 @@ class BVNotesViewModel: ObservableObject {
         }
         
         // Apply follow-up plan to additional notes if available
-        if !template.followUpPlan.isEmpty && currentState.additionalNotes.isEmpty {
+        if !template.followUpPlan.isEmpty {
             currentState.additionalNotes = template.followUpPlan
+        } else {
+            currentState.additionalNotes = ""
         }
         
         // Clear payment mode when initializing
@@ -254,3 +263,4 @@ class BVNotesViewModel: ObservableObject {
         return state
     }
 }
+

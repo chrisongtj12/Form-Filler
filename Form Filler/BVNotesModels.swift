@@ -226,12 +226,14 @@ struct GlobalVaccineSettings: Codable {
             ),
             Milestone.m4.rawValue: MilestoneTemplate(
                 defaultSelections: [Vaccine.pentaxim.rawValue: true, Vaccine.pcv13.rawValue: true, Vaccine.pcv15.rawValue: false, Vaccine.pcv20.rawValue: false, Vaccine.rotarix.rawValue: false],
-                defaultDosages: [Vaccine.pentaxim.rawValue: "Dose 1", Vaccine.pcv13.rawValue: "Dose 1", Vaccine.pcv15.rawValue: "Dose 1", Vaccine.pcv20.rawValue: "Dose 1", Vaccine.rotarix.rawValue: "Dose 2"],
+                // PCV20 should be Dose 2 at 4 months
+                defaultDosages: [Vaccine.pentaxim.rawValue: "Dose 1", Vaccine.pcv13.rawValue: "Dose 1", Vaccine.pcv15.rawValue: "Dose 1", Vaccine.pcv20.rawValue: "Dose 2", Vaccine.rotarix.rawValue: "Dose 2"],
                 followUpPlan: "Next visit at 6 months for Hexaxim and PCV13."
             ),
             Milestone.m6.rawValue: MilestoneTemplate(
                 defaultSelections: [Vaccine.hexaxim.rawValue: true, Vaccine.pcv13.rawValue: true, Vaccine.pcv15.rawValue: false, Vaccine.pcv20.rawValue: false],
-                defaultDosages: [Vaccine.hexaxim.rawValue: "Dose 2", Vaccine.pcv13.rawValue: "Dose 2", Vaccine.pcv15.rawValue: "Dose 2", Vaccine.pcv20.rawValue: "Dose 2"],
+                // PCV20 should be Dose 3 at 6 months
+                defaultDosages: [Vaccine.hexaxim.rawValue: "Dose 2", Vaccine.pcv13.rawValue: "Dose 2", Vaccine.pcv15.rawValue: "Dose 2", Vaccine.pcv20.rawValue: "Dose 3"],
                 followUpPlan: "Next visit at 12 months for MMR, Varicella, and PCV13 booster."
             ),
             Milestone.m12.rawValue: MilestoneTemplate(
@@ -284,3 +286,4 @@ enum BVValidationError: Error, Identifiable {
         }
     }
 }
+

@@ -71,6 +71,18 @@ struct SettingsView: View {
                 Text("Configure global vaccine lot numbers and milestone templates used by BV Notes.")
                     .font(.caption)
                     .foregroundColor(.secondary)
+                
+                // New: Export/Import BV Notes settings bundled with coordinates
+                if let adapter {
+                    Button("Export coordinates + BV Notes settings") {
+                        let json = makeCombinedExportJSON(templates: adapter.templates, bvSettings: bvNotesViewModel.globalSettings)
+                        Clipboard.copy(json)
+                        showingCopiedAlert = true
+                    }
+                    Button("Import coordinates + BV Notes settings") {
+                        showingImport = true
+                    }
+                }
             }
             
             // Templates management and coordinate transfer live in the same section
@@ -91,7 +103,7 @@ struct SettingsView: View {
                     }
                 }
                 
-                // Export coordinates row
+                // Existing Export coordinates row (templates only)
                 Button("Export coordinates") {
                     guard let adapter else { return }
                     let json = makeExportJSON(from: adapter.templates)
@@ -99,7 +111,7 @@ struct SettingsView: View {
                     showingCopiedAlert = true
                 }
                 
-                // Import coordinates row
+                // Existing Import coordinates row (templates only or combined; importer handles both)
                 Button("Import coordinates") {
                     showingImport = true
                 }
@@ -130,13 +142,19 @@ struct SettingsView: View {
         .alert("Copied", isPresented: $showingCopiedAlert) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Template coordinates copied to clipboard.")
+            Text("Export JSON copied to clipboard.")
         }
-        // Import sheet – pass the same store environment object
+        // Import sheet – uses existing importer which now also saves BV Notes settings if present
         .sheet(isPresented: $showingImport) {
             if let adapter {
                 ImportCoordinatesSheet<AppStateTemplateAdapter>()
                     .environmentObject(adapter)
+                    .onDisappear {
+                        // Reload BV settings from disk in case an import updated them
+                        if let loaded = BVNotesViewModel.loadGlobalSettings() {
+                            bvNotesViewModel.globalSettings = loaded
+                        }
+                    }
             } else {
                 // Fallback: if adapter isn’t ready, show a spinner briefly
                 ProgressView()
