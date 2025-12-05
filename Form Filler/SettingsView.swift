@@ -14,14 +14,25 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            // Doctor's Info
+            // Doctor's Info - Inline fields
             Section(header: Text("Clinician Information")) {
-                NavigationLink(destination: ClinicianSettingsView().environmentObject(appState)) {
-                    HStack {
-                        Image(systemName: "person.circle")
-                        Text("Doctor's Name & MCR")
+                TextField("Display Name", text: Binding(
+                    get: { appState.clinician.displayName },
+                    set: { newValue in
+                        appState.clinician.displayName = newValue
+                        appState.saveClinician()
                     }
-                }
+                ))
+                .textContentType(.name)
+                
+                TextField("MCR Number", text: Binding(
+                    get: { appState.clinician.mcrNumber },
+                    set: { newValue in
+                        appState.clinician.mcrNumber = newValue
+                        appState.saveClinician()
+                    }
+                ))
+                .textContentType(.username)
             }
             
             // BV Notes Settings
@@ -148,66 +159,6 @@ struct AllSettingsExport: Codable {
     let clinician: Clinician
     let bvNotesSettings: GlobalVaccineSettings
     let templates: [Template]
-}
-
-// MARK: - Clinician Settings View
-
-struct ClinicianSettingsView: View {
-    @EnvironmentObject var appState: AppState
-    @State private var displayName: String = ""
-    @State private var mcrNumber: String = ""
-    
-    var body: some View {
-        Form {
-            Section(header: Text("Doctor Information")) {
-                TextField("Display Name", text: $displayName)
-                    .textContentType(.name)
-                
-                TextField("MCR Number", text: $mcrNumber)
-                    .textContentType(.username)
-            }
-            
-            Section(header: Text("Signature")) {
-                #if os(iOS)
-                if let base64 = appState.clinician.defaultSignatureImagePNGBase64,
-                   let data = Data(base64Encoded: base64),
-                   let uiImage = UIImage(data: data) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: 100)
-                }
-                #elseif os(macOS)
-                if let base64 = appState.clinician.defaultSignatureImagePNGBase64,
-                   let data = Data(base64Encoded: base64),
-                   let nsImage = NSImage(data: data) {
-                    Image(nsImage: nsImage)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: 100)
-                }
-                #endif
-                
-                Button("Update Signature") {
-                    // TODO: Add signature capture functionality
-                }
-            }
-        }
-        .navigationTitle("Clinician Settings")
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            displayName = appState.clinician.displayName
-            mcrNumber = appState.clinician.mcrNumber
-        }
-        .onChange(of: displayName) { _, newValue in
-            appState.clinician.displayName = newValue
-            appState.saveClinician()
-        }
-        .onChange(of: mcrNumber) { _, newValue in
-            appState.clinician.mcrNumber = newValue
-            appState.saveClinician()
-        }
-    }
 }
 
 // MARK: - Import View

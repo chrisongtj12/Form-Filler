@@ -11,58 +11,97 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var appState: AppState
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         NavigationView {
-            List {
-                // Templates section removed -- now lives in SettingsView
-
-                Section {
-                    bvNotesCard
+            VStack(spacing: 0) {
+                // Header with subtitle
+                VStack(spacing: 12) {
+                    // Logo
+                    Image(systemName: "stethoscope.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundStyle(.blue.gradient)
+                    
+                    Text("Clinical Notes Helper")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                    Text("A simple template tool for busy clinicians on the go")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
                 }
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                .listRowBackground(Color.clear)
+                .padding(.top, 50)
+                .padding(.bottom, 20)
+                .frame(maxWidth: .infinity)
+                .background(Color(.systemGray6))
                 
-                Section(header: Text("Institutions")) {
-                    ForEach(appState.institutions) { institution in
-                        NavigationLink {
-                            InstitutionFormListView(institution: institution)
-                                .environmentObject(appState)
-                        } label: {
-                            HStack {
-                                Image(systemName: institution.iconName)
-                                Text(institution.displayName)
-                                Spacer()
-                                Text(institution.subtitle)
-                                    .foregroundColor(.secondary)
-                                    .font(.caption)
-                            }
-                        }
+                List {
+                    // Templates section removed -- now lives in SettingsView
+                    
+                    // BV Notes Section
+                    Section(header: Text("Baby Vaccination")) {
+                        bvNotesCard
                     }
                     
-                    NavigationLink {
-                        InstitutionManagerView()
-                            .environmentObject(appState)
-                    } label: {
-                        Label("Manage Institutions", systemImage: "building.2.crop.circle")
-                            .foregroundColor(.accentColor)
+                    Section(header: Text("Clinical Templates")) {
+                        ForEach(appState.institutions) { institution in
+                            NavigationLink {
+                                InstitutionFormListView(institution: institution)
+                                    .environmentObject(appState)
+                            } label: {
+                                HStack {
+                                    Image(systemName: institution.iconName)
+                                    Text(institution.displayName)
+                                    Spacer()
+                                    Text(institution.subtitle)
+                                        .foregroundColor(.secondary)
+                                        .font(.caption)
+                                }
+                            }
+                        }
+                        
+                        NavigationLink {
+                            InstitutionManagerView()
+                                .environmentObject(appState)
+                        } label: {
+                            Label("Manage Templates", systemImage: "building.2.crop.circle")
+                                .foregroundColor(.accentColor)
+                        }
+                    }
+
+                    // Tools now only keeps the editor link above; you can add more tools here later.
+
+                    // Settings
+                    Section(header: Text("Settings")) {
+                        NavigationLink {
+                            SettingsView()
+                                .environmentObject(appState)
+                        } label: {
+                            Label("Settings", systemImage: "gearshape")
+                        }
                     }
                 }
-
-                // Tools now only keeps the editor link above; you can add more tools here later.
-
-                // Settings
-                Section(header: Text("Settings")) {
-                    NavigationLink {
-                        SettingsView()
-                            .environmentObject(appState)
-                    } label: {
-                        Label("Settings", systemImage: "gearshape")
-                    }
-                }
+                .scrollContentBackground(.hidden) // match page background
+                .background(Color(.systemGray6)) // ensure same as header/page
+                
+                // Version Info - Fixed at bottom
+                Text("Version \(appVersion)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity)
             }
-            .navigationTitle("Form Filler")
+            .background(Color(.systemGray6)) // unify entire page background
         }
+    }
+    
+    // MARK: - Version Helper
+    
+    private var appVersion: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        return "\(version) (\(build))"
     }
 }
 
@@ -76,7 +115,7 @@ struct TemplateListView: View {
         List {
             ForEach(appState.templates) { template in
                 NavigationLink {
-                    // Placeholder filler; replace with your generic form filler when ready
+                    // Placeholder filler; replace with your generic form filler when you implement it
                     TemplateActionsView(template: template)
                         .environmentObject(appState)
                 } label: {
