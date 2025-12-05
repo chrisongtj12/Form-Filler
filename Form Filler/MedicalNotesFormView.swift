@@ -52,17 +52,17 @@ struct MedicalNotesFormView: View {
             
             Section(header: Text("Patient Information")) {
                 TextField("Patient Name", text: $appState.medicalNotesDraft.patientName)
-                    .onChange(of: appState.medicalNotesDraft.patientName) { _ in
+                    .onChange(of: appState.medicalNotesDraft.patientName) {
                         appState.saveMedicalNotesDraft()
                     }
                 
                 TextField("NRIC", text: $appState.medicalNotesDraft.patientNRIC)
-                    .onChange(of: appState.medicalNotesDraft.patientNRIC) { _ in
+                    .onChange(of: appState.medicalNotesDraft.patientNRIC) {
                         appState.saveMedicalNotesDraft()
                     }
                 
                 TextField("Date", text: $appState.medicalNotesDraft.date)
-                    .onChange(of: appState.medicalNotesDraft.date) { _ in
+                    .onChange(of: appState.medicalNotesDraft.date) {
                         appState.saveMedicalNotesDraft()
                     }
                 
@@ -85,22 +85,22 @@ struct MedicalNotesFormView: View {
             
             Section(header: Text("Vital Signs")) {
                 TextField("Blood Pressure (BP)", text: $appState.medicalNotesDraft.bp)
-                    .onChange(of: appState.medicalNotesDraft.bp) { _ in
+                    .onChange(of: appState.medicalNotesDraft.bp) {
                         appState.saveMedicalNotesDraft()
                     }
                 
                 TextField("SpO2", text: $appState.medicalNotesDraft.spo2)
-                    .onChange(of: appState.medicalNotesDraft.spo2) { _ in
+                    .onChange(of: appState.medicalNotesDraft.spo2) {
                         appState.saveMedicalNotesDraft()
                     }
                 
                 TextField("Pulse Rate (PR)", text: $appState.medicalNotesDraft.pr)
-                    .onChange(of: appState.medicalNotesDraft.pr) { _ in
+                    .onChange(of: appState.medicalNotesDraft.pr) {
                         appState.saveMedicalNotesDraft()
                     }
                 
                 TextField("Hypo Count", text: $appState.medicalNotesDraft.hypocount)
-                    .onChange(of: appState.medicalNotesDraft.hypocount) { _ in
+                    .onChange(of: appState.medicalNotesDraft.hypocount) {
                         appState.saveMedicalNotesDraft()
                     }
             }
@@ -112,7 +112,7 @@ struct MedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.medicalNotesDraft.pastHistory)
                         .frame(height: 100)
-                        .onChange(of: appState.medicalNotesDraft.pastHistory) { _ in
+                        .onChange(of: appState.medicalNotesDraft.pastHistory) {
                             appState.saveMedicalNotesDraft()
                         }
                 }
@@ -123,7 +123,7 @@ struct MedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.medicalNotesDraft.hpi)
                         .frame(height: 120)
-                        .onChange(of: appState.medicalNotesDraft.hpi) { _ in
+                        .onChange(of: appState.medicalNotesDraft.hpi) {
                             appState.saveMedicalNotesDraft()
                         }
                 }
@@ -134,7 +134,7 @@ struct MedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.medicalNotesDraft.physicalExam)
                         .frame(height: 120)
-                        .onChange(of: appState.medicalNotesDraft.physicalExam) { _ in
+                        .onChange(of: appState.medicalNotesDraft.physicalExam) {
                             appState.saveMedicalNotesDraft()
                         }
                 }
@@ -147,7 +147,7 @@ struct MedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.medicalNotesDraft.issues)
                         .frame(height: 100)
-                        .onChange(of: appState.medicalNotesDraft.issues) { _ in
+                        .onChange(of: appState.medicalNotesDraft.issues) {
                             appState.saveMedicalNotesDraft()
                         }
                 }
@@ -158,7 +158,7 @@ struct MedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.medicalNotesDraft.management)
                         .frame(height: 120)
-                        .onChange(of: appState.medicalNotesDraft.management) { _ in
+                        .onChange(of: appState.medicalNotesDraft.management) {
                             appState.saveMedicalNotesDraft()
                         }
                 }
@@ -166,12 +166,12 @@ struct MedicalNotesFormView: View {
             
             Section(header: Text("Clinician")) {
                 TextField("Clinician Name", text: $appState.medicalNotesDraft.clinicianName)
-                    .onChange(of: appState.medicalNotesDraft.clinicianName) { _ in
+                    .onChange(of: appState.medicalNotesDraft.clinicianName) {
                         appState.saveMedicalNotesDraft()
                     }
                 
                 TextField("MCR Number", text: $appState.medicalNotesDraft.clinicianMCR)
-                    .onChange(of: appState.medicalNotesDraft.clinicianMCR) { _ in
+                    .onChange(of: appState.medicalNotesDraft.clinicianMCR) {
                         appState.saveMedicalNotesDraft()
                     }
                 

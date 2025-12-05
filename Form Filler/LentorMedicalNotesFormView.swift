@@ -44,17 +44,17 @@ struct LentorMedicalNotesFormView: View {
             // Patient Information
             Section(header: Text("Patient Information")) {
                 TextField("Name of Client", text: $appState.lentorMedicalNotesDraft.patientName)
-                    .onChange(of: appState.lentorMedicalNotesDraft.patientName) { _ in
+                    .onChange(of: appState.lentorMedicalNotesDraft.patientName) {
                         appState.saveLentorMedicalNotesDraft()
                     }
                 
                 TextField("NRIC of Client", text: $appState.lentorMedicalNotesDraft.nric)
-                    .onChange(of: appState.lentorMedicalNotesDraft.nric) { _ in
+                    .onChange(of: appState.lentorMedicalNotesDraft.nric) {
                         appState.saveLentorMedicalNotesDraft()
                     }
                 
                 TextField("Date of Visit", text: $appState.lentorMedicalNotesDraft.dateOfVisit)
-                    .onChange(of: appState.lentorMedicalNotesDraft.dateOfVisit) { _ in
+                    .onChange(of: appState.lentorMedicalNotesDraft.dateOfVisit) {
                         appState.saveLentorMedicalNotesDraft()
                     }
                 
@@ -69,12 +69,12 @@ struct LentorMedicalNotesFormView: View {
             // NOK Information
             Section(header: Text("Next of Kin")) {
                 TextField("NOK Name", text: $appState.lentorMedicalNotesDraft.nokName)
-                    .onChange(of: appState.lentorMedicalNotesDraft.nokName) { _ in
+                    .onChange(of: appState.lentorMedicalNotesDraft.nokName) {
                         appState.saveLentorMedicalNotesDraft()
                     }
                 
                 TextField("NOK Contact No", text: $appState.lentorMedicalNotesDraft.nokContact)
-                    .onChange(of: appState.lentorMedicalNotesDraft.nokContact) { _ in
+                    .onChange(of: appState.lentorMedicalNotesDraft.nokContact) {
                         appState.saveLentorMedicalNotesDraft()
                     }
             }
@@ -85,7 +85,7 @@ struct LentorMedicalNotesFormView: View {
                     Text("Temp")
                         .frame(width: 80, alignment: .leading)
                     TextField("°C", text: $appState.lentorMedicalNotesDraft.temp)
-                        .onChange(of: appState.lentorMedicalNotesDraft.temp) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.temp) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -94,7 +94,7 @@ struct LentorMedicalNotesFormView: View {
                     Text("RR")
                         .frame(width: 80, alignment: .leading)
                     TextField("bpm", text: $appState.lentorMedicalNotesDraft.rr)
-                        .onChange(of: appState.lentorMedicalNotesDraft.rr) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.rr) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -103,7 +103,7 @@ struct LentorMedicalNotesFormView: View {
                     Text("BP")
                         .frame(width: 80, alignment: .leading)
                     TextField("mmHg", text: $appState.lentorMedicalNotesDraft.bp)
-                        .onChange(of: appState.lentorMedicalNotesDraft.bp) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.bp) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -112,7 +112,7 @@ struct LentorMedicalNotesFormView: View {
                     Text("SpO2")
                         .frame(width: 80, alignment: .leading)
                     TextField("%", text: $appState.lentorMedicalNotesDraft.spo2)
-                        .onChange(of: appState.lentorMedicalNotesDraft.spo2) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.spo2) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -121,7 +121,7 @@ struct LentorMedicalNotesFormView: View {
                     Text("PR")
                         .frame(width: 80, alignment: .leading)
                     TextField("bpm", text: $appState.lentorMedicalNotesDraft.pr)
-                        .onChange(of: appState.lentorMedicalNotesDraft.pr) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.pr) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -130,7 +130,7 @@ struct LentorMedicalNotesFormView: View {
                     Text("H/C")
                         .frame(width: 80, alignment: .leading)
                     TextField("Hypocount", text: $appState.lentorMedicalNotesDraft.hc)
-                        .onChange(of: appState.lentorMedicalNotesDraft.hc) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.hc) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -142,7 +142,7 @@ struct LentorMedicalNotesFormView: View {
                     Text("Most Recent")
                         .frame(width: 120, alignment: .leading)
                     TextField("kg", text: $appState.lentorMedicalNotesDraft.weightMostRecent)
-                        .onChange(of: appState.lentorMedicalNotesDraft.weightMostRecent) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.weightMostRecent) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -151,7 +151,7 @@ struct LentorMedicalNotesFormView: View {
                     Text("Least Recent")
                         .frame(width: 120, alignment: .leading)
                     TextField("kg", text: $appState.lentorMedicalNotesDraft.weightLeastRecent)
-                        .onChange(of: appState.lentorMedicalNotesDraft.weightLeastRecent) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.weightLeastRecent) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -165,7 +165,7 @@ struct LentorMedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.lentorMedicalNotesDraft.gcIssue1)
                         .frame(height: 80)
-                        .onChange(of: appState.lentorMedicalNotesDraft.gcIssue1) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.gcIssue1) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -176,7 +176,7 @@ struct LentorMedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.lentorMedicalNotesDraft.gcIssue2)
                         .frame(height: 80)
-                        .onChange(of: appState.lentorMedicalNotesDraft.gcIssue2) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.gcIssue2) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -187,7 +187,7 @@ struct LentorMedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.lentorMedicalNotesDraft.gcIssue3)
                         .frame(height: 80)
-                        .onChange(of: $appState.lentorMedicalNotesDraft.gcIssue3.wrappedValue) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.gcIssue3) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -198,7 +198,7 @@ struct LentorMedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.lentorMedicalNotesDraft.gcIssue4)
                         .frame(height: 80)
-                        .onChange(of: appState.lentorMedicalNotesDraft.gcIssue4) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.gcIssue4) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -209,7 +209,7 @@ struct LentorMedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.lentorMedicalNotesDraft.gcIssue5)
                         .frame(height: 80)
-                        .onChange(of: appState.lentorMedicalNotesDraft.gcIssue5) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.gcIssue5) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -220,7 +220,7 @@ struct LentorMedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.lentorMedicalNotesDraft.gcIssue6)
                         .frame(height: 80)
-                        .onChange(of: appState.lentorMedicalNotesDraft.gcIssue6) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.gcIssue6) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -231,7 +231,7 @@ struct LentorMedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.lentorMedicalNotesDraft.gcIssue7)
                         .frame(height: 80)
-                        .onChange(of: appState.lentorMedicalNotesDraft.gcIssue7) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.gcIssue7) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -241,7 +241,7 @@ struct LentorMedicalNotesFormView: View {
             Section(header: Text("Physical Examination")) {
                 TextEditor(text: $appState.lentorMedicalNotesDraft.physicalExam)
                     .frame(height: 120)
-                    .onChange(of: appState.lentorMedicalNotesDraft.physicalExam) { _ in
+                    .onChange(of: appState.lentorMedicalNotesDraft.physicalExam) {
                         appState.saveLentorMedicalNotesDraft()
                     }
             }
@@ -250,7 +250,7 @@ struct LentorMedicalNotesFormView: View {
             Section(header: Text("TCUs Planned for Next 6 Months")) {
                 TextEditor(text: $appState.lentorMedicalNotesDraft.tcuPlan6m)
                     .frame(height: 100)
-                    .onChange(of: appState.lentorMedicalNotesDraft.tcuPlan6m) { _ in
+                    .onChange(of: appState.lentorMedicalNotesDraft.tcuPlan6m) {
                         appState.saveLentorMedicalNotesDraft()
                     }
             }
@@ -258,22 +258,22 @@ struct LentorMedicalNotesFormView: View {
             // Document Review
             Section(header: Text("Review of Documents")) {
                 Toggle("Lab reports checked", isOn: $appState.lentorMedicalNotesDraft.docLabReportsChecked)
-                    .onChange(of: appState.lentorMedicalNotesDraft.docLabReportsChecked) { _ in
+                    .onChange(of: appState.lentorMedicalNotesDraft.docLabReportsChecked) {
                         appState.saveLentorMedicalNotesDraft()
                     }
                 
                 Toggle("Lab trend chart filled", isOn: $appState.lentorMedicalNotesDraft.docLabTrendChartFill)
-                    .onChange(of: appState.lentorMedicalNotesDraft.docLabTrendChartFill) { _ in
+                    .onChange(of: appState.lentorMedicalNotesDraft.docLabTrendChartFill) {
                         appState.saveLentorMedicalNotesDraft()
                     }
                 
                 Toggle("Lab trend chart present", isOn: $appState.lentorMedicalNotesDraft.docLabTrendChartPresent)
-                    .onChange(of: appState.lentorMedicalNotesDraft.docLabTrendChartPresent) { _ in
+                    .onChange(of: appState.lentorMedicalNotesDraft.docLabTrendChartPresent) {
                         appState.saveLentorMedicalNotesDraft()
                     }
                 
                 Toggle("Med rec reconciliation done", isOn: $appState.lentorMedicalNotesDraft.docMedRecRecon)
-                    .onChange(of: appState.lentorMedicalNotesDraft.docMedRecRecon) { _ in
+                    .onChange(of: appState.lentorMedicalNotesDraft.docMedRecRecon) {
                         appState.saveLentorMedicalNotesDraft()
                     }
                 
@@ -282,7 +282,7 @@ struct LentorMedicalNotesFormView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                     TextField("Other documents reviewed", text: $appState.lentorMedicalNotesDraft.docOthersText)
-                        .onChange(of: appState.lentorMedicalNotesDraft.docOthersText) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.docOthersText) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -296,7 +296,7 @@ struct LentorMedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.lentorMedicalNotesDraft.planMedChanges)
                         .frame(height: 100)
-                        .onChange(of: appState.lentorMedicalNotesDraft.planMedChanges) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.planMedChanges) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -307,7 +307,7 @@ struct LentorMedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.lentorMedicalNotesDraft.planLabTests)
                         .frame(height: 100)
-                        .onChange(of: appState.lentorMedicalNotesDraft.planLabTests) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.planLabTests) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -318,7 +318,7 @@ struct LentorMedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.lentorMedicalNotesDraft.planSpecialMonitoring)
                         .frame(height: 100)
-                        .onChange(of: appState.lentorMedicalNotesDraft.planSpecialMonitoring) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.planSpecialMonitoring) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -332,7 +332,7 @@ struct LentorMedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.lentorMedicalNotesDraft.planFollowUpReview)
                         .frame(height: 80)
-                        .onChange(of: appState.lentorMedicalNotesDraft.planFollowUpReview) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.planFollowUpReview) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -343,7 +343,7 @@ struct LentorMedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.lentorMedicalNotesDraft.planReferralsMemos)
                         .frame(height: 80)
-                        .onChange(of: appState.lentorMedicalNotesDraft.planReferralsMemos) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.planReferralsMemos) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -354,7 +354,7 @@ struct LentorMedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.lentorMedicalNotesDraft.planACP)
                         .frame(height: 80)
-                        .onChange(of: appState.lentorMedicalNotesDraft.planACP) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.planACP) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -365,7 +365,7 @@ struct LentorMedicalNotesFormView: View {
                         .foregroundColor(.secondary)
                     TextEditor(text: $appState.lentorMedicalNotesDraft.planOthersUpdateNOK)
                         .frame(height: 80)
-                        .onChange(of: appState.lentorMedicalNotesDraft.planOthersUpdateNOK) { _ in
+                        .onChange(of: appState.lentorMedicalNotesDraft.planOthersUpdateNOK) {
                             appState.saveLentorMedicalNotesDraft()
                         }
                 }
@@ -374,17 +374,17 @@ struct LentorMedicalNotesFormView: View {
             // Doctor Details
             Section(header: Text("Doctor Details")) {
                 TextField("Doctor Name", text: $appState.lentorMedicalNotesDraft.doctorName)
-                    .onChange(of: appState.lentorMedicalNotesDraft.doctorName) { _ in
+                    .onChange(of: appState.lentorMedicalNotesDraft.doctorName) {
                         appState.saveLentorMedicalNotesDraft()
                     }
                 
                 TextField("Doctor MCR", text: $appState.lentorMedicalNotesDraft.doctorMCR)
-                    .onChange(of: appState.lentorMedicalNotesDraft.doctorMCR) { _ in
+                    .onChange(of: appState.lentorMedicalNotesDraft.doctorMCR) {
                         appState.saveLentorMedicalNotesDraft()
                     }
                 
                 TextField("Doctor e-Signature", text: $appState.lentorMedicalNotesDraft.doctorESign)
-                    .onChange(of: appState.lentorMedicalNotesDraft.doctorESign) { _ in
+                    .onChange(of: appState.lentorMedicalNotesDraft.doctorESign) {
                         appState.saveLentorMedicalNotesDraft()
                     }
                 
@@ -506,4 +506,3 @@ struct LentorMedicalNotesFormView: View {
             .environmentObject(AppState())
     }
 }
-

@@ -27,12 +27,12 @@ struct HVRecordFormView: View {
                         Text(type).tag(type)
                     }
                 }
-                .onChange(of: appState.hvRecordDraft.serviceType) { _ in
+                .onChange(of: appState.hvRecordDraft.serviceType) {
                     appState.saveHVRecordDraft()
                 }
                 
                 TextField("Clinician Name", text: $appState.hvRecordDraft.clinicianName)
-                    .onChange(of: appState.hvRecordDraft.clinicianName) { _ in
+                    .onChange(of: appState.hvRecordDraft.clinicianName) {
                         appState.saveHVRecordDraft()
                     }
                 
@@ -69,27 +69,27 @@ struct HVRecordFormView: View {
                             }
                             
                             TextField("Client Name", text: $appState.hvRecordDraft.rows[index].clientName)
-                                .onChange(of: appState.hvRecordDraft.rows[index].clientName) { _ in
+                                .onChange(of: appState.hvRecordDraft.rows[index].clientName) {
                                     appState.saveHVRecordDraft()
                                 }
                             
                             TextField("Client NRIC", text: $appState.hvRecordDraft.rows[index].clientNRIC)
-                                .onChange(of: appState.hvRecordDraft.rows[index].clientNRIC) { _ in
+                                .onChange(of: appState.hvRecordDraft.rows[index].clientNRIC) {
                                     appState.saveHVRecordDraft()
                                 }
                             
                             TextField("Date & Time of Visit", text: $appState.hvRecordDraft.rows[index].dateTimeOfVisit)
-                                .onChange(of: appState.hvRecordDraft.rows[index].dateTimeOfVisit) { _ in
+                                .onChange(of: appState.hvRecordDraft.rows[index].dateTimeOfVisit) {
                                     appState.saveHVRecordDraft()
                                 }
                             
                             TextField("Client/NOK", text: $appState.hvRecordDraft.rows[index].clientNOK)
-                                .onChange(of: appState.hvRecordDraft.rows[index].clientNOK) { _ in
+                                .onChange(of: appState.hvRecordDraft.rows[index].clientNOK) {
                                     appState.saveHVRecordDraft()
                                 }
                             
                             TextField("Signature", text: $appState.hvRecordDraft.rows[index].signatureText)
-                                .onChange(of: appState.hvRecordDraft.rows[index].signatureText) { _ in
+                                .onChange(of: appState.hvRecordDraft.rows[index].signatureText) {
                                     appState.saveHVRecordDraft()
                                 }
                         }

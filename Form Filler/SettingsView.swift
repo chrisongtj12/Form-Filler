@@ -121,8 +121,9 @@ struct SettingsView: View {
                 HStack {
                     Text("Version")
                     Spacer()
-                    Text("1.0")
+                    Text(appVersionString())
                         .foregroundColor(.secondary)
+                        .accessibilityLabel("App Version")
                 }
                 
                 Text("Speedoc Clinical Notes fills PDF forms from image templates. Exports flattened PDFs with specific filenames.")
@@ -165,6 +166,14 @@ struct SettingsView: View {
                     }
             }
         }
+    }
+    
+    // MARK: - Helpers
+    
+    private func appVersionString() -> String {
+        let marketing = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "—"
+        return "\(marketing) (\(build))"
     }
 }
 

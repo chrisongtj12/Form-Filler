@@ -328,12 +328,10 @@ struct BVNotesView: View {
     NavigationView {
         BVNotesView()
     }
-    .previewDevice("iPad Pro (12.9-inch) (6th generation)")
 }
 
 #Preview("BV Notes View - iPhone") {
     NavigationView {
         BVNotesView()
     }
-    .previewDevice("iPhone 15 Pro")
 }

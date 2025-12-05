@@ -23,12 +23,12 @@ struct LentorHVRecordFormView: View {
             // Client Information
             Section(header: Text("Client Information")) {
                 TextField("Client Name", text: $appState.lentorHVRecordDraft.clientName)
-                    .onChange(of: appState.lentorHVRecordDraft.clientName) { _ in
+                    .onChange(of: appState.lentorHVRecordDraft.clientName) {
                         appState.saveLentorHVRecordDraft()
                     }
                 
                 TextField("Client NRIC", text: $appState.lentorHVRecordDraft.clientNRIC)
-                    .onChange(of: appState.lentorHVRecordDraft.clientNRIC) { _ in
+                    .onChange(of: appState.lentorHVRecordDraft.clientNRIC) {
                         appState.saveLentorHVRecordDraft()
                     }
             }
@@ -36,12 +36,12 @@ struct LentorHVRecordFormView: View {
             // Service Location
             Section(header: Text("Service Location")) {
                 TextField("Location", text: $appState.lentorHVRecordDraft.serviceLocation)
-                    .onChange(of: appState.lentorHVRecordDraft.serviceLocation) { _ in
+                    .onChange(of: appState.lentorHVRecordDraft.serviceLocation) {
                         appState.saveLentorHVRecordDraft()
                     }
                 
                 TextField("Contact No", text: $appState.lentorHVRecordDraft.serviceContact)
-                    .onChange(of: appState.lentorHVRecordDraft.serviceContact) { _ in
+                    .onChange(of: appState.lentorHVRecordDraft.serviceContact) {
                         appState.saveLentorHVRecordDraft()
                     }
             }
@@ -49,22 +49,22 @@ struct LentorHVRecordFormView: View {
             // Caregiver Information
             Section(header: Text("Caregiver Information")) {
                 TextField("Caregiver Name", text: $appState.lentorHVRecordDraft.caregiverName)
-                    .onChange(of: appState.lentorHVRecordDraft.caregiverName) { _ in
+                    .onChange(of: appState.lentorHVRecordDraft.caregiverName) {
                         appState.saveLentorHVRecordDraft()
                     }
                 
                 TextField("Caregiver NRIC", text: $appState.lentorHVRecordDraft.caregiverNRIC)
-                    .onChange(of: appState.lentorHVRecordDraft.caregiverNRIC) { _ in
+                    .onChange(of: appState.lentorHVRecordDraft.caregiverNRIC) {
                         appState.saveLentorHVRecordDraft()
                     }
                 
                 TextField("Caregiver Address", text: $appState.lentorHVRecordDraft.caregiverAddress)
-                    .onChange(of: appState.lentorHVRecordDraft.caregiverAddress) { _ in
+                    .onChange(of: appState.lentorHVRecordDraft.caregiverAddress) {
                         appState.saveLentorHVRecordDraft()
                     }
                 
                 TextField("Caregiver Contact", text: $appState.lentorHVRecordDraft.caregiverContact)
-                    .onChange(of: appState.lentorHVRecordDraft.caregiverContact) { _ in
+                    .onChange(of: appState.lentorHVRecordDraft.caregiverContact) {
                         appState.saveLentorHVRecordDraft()
                     }
             }
@@ -97,7 +97,7 @@ struct LentorHVRecordFormView: View {
                             }
                             
                             TextField("Date", text: $appState.lentorHVRecordDraft.rows[index].date)
-                                .onChange(of: appState.lentorHVRecordDraft.rows[index].date) { _ in
+                                .onChange(of: appState.lentorHVRecordDraft.rows[index].date) {
                                     appState.saveLentorHVRecordDraft()
                                 }
                             
@@ -107,7 +107,7 @@ struct LentorHVRecordFormView: View {
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                     TextField("e.g. 09:00", text: $appState.lentorHVRecordDraft.rows[index].timeStart)
-                                        .onChange(of: appState.lentorHVRecordDraft.rows[index].timeStart) { _ in
+                                        .onChange(of: appState.lentorHVRecordDraft.rows[index].timeStart) {
                                             appState.saveLentorHVRecordDraft()
                                         }
                                 }
@@ -117,14 +117,14 @@ struct LentorHVRecordFormView: View {
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                     TextField("e.g. 10:00", text: $appState.lentorHVRecordDraft.rows[index].timeEnd)
-                                        .onChange(of: appState.lentorHVRecordDraft.rows[index].timeEnd) { _ in
+                                        .onChange(of: appState.lentorHVRecordDraft.rows[index].timeEnd) {
                                             appState.saveLentorHVRecordDraft()
                                         }
                                 }
                             }
                             
                             TextField("Total Hours", text: $appState.lentorHVRecordDraft.rows[index].totalHours)
-                                .onChange(of: appState.lentorHVRecordDraft.rows[index].totalHours) { _ in
+                                .onChange(of: appState.lentorHVRecordDraft.rows[index].totalHours) {
                                     appState.saveLentorHVRecordDraft()
                                 }
                             
@@ -133,18 +133,18 @@ struct LentorHVRecordFormView: View {
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                                 TextField("e.g. HN, HM, HPC, HT", text: $appState.lentorHVRecordDraft.rows[index].typeOfServices)
-                                    .onChange(of: appState.lentorHVRecordDraft.rows[index].typeOfServices) { _ in
+                                    .onChange(of: appState.lentorHVRecordDraft.rows[index].typeOfServices) {
                                         appState.saveLentorHVRecordDraft()
                                     }
                             }
                             
                             TextField("Caregiver Signature", text: $appState.lentorHVRecordDraft.rows[index].caregiverSignature)
-                                .onChange(of: appState.lentorHVRecordDraft.rows[index].caregiverSignature) { _ in
+                                .onChange(of: appState.lentorHVRecordDraft.rows[index].caregiverSignature) {
                                     appState.saveLentorHVRecordDraft()
                                 }
                             
                             TextField("HC Staff Signature", text: $appState.lentorHVRecordDraft.rows[index].hcStaffSignature)
-                                .onChange(of: appState.lentorHVRecordDraft.rows[index].hcStaffSignature) { _ in
+                                .onChange(of: appState.lentorHVRecordDraft.rows[index].hcStaffSignature) {
                                     appState.saveLentorHVRecordDraft()
                                 }
                         }
@@ -289,4 +289,3 @@ struct LentorHVRecordFormView: View {
             .environmentObject(AppState())
     }
 }
-
